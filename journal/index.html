@@ -3,7 +3,11 @@ layout: page
 title: Studio journal
 lede: A running record of what happens in the studio — painting sessions, sketches, tests and notes — written on the day.
 ---
+{% if site.posts.size == 0 %}
+<p class="page__lede">The first entries will appear here soon.</p>
+{% else %}
 <p class="page__meta"><a href="{{ '/journal/feed.xml' | relative_url }}">Subscribe to the journal feed</a></p>
+{% endif %}
 <div class="log-list">
   {% for post in paginator.posts %}
     {% include entry-body.html entry=post %}
