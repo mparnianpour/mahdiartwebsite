@@ -1,0 +1,34 @@
+{% comment %}
+  A year of recorded studio days: every journal entry plus every dated
+  painting stage. Drawn by assets/js/main.js.
+{% endcomment %}
+<div class="calendar" data-calendar>
+  <script type="application/json" data-calendar-data>
+  [
+  {%- for p in site.posts -%}
+    {"d":"{{ p.date | date: '%Y-%m-%d' }}","t":{{ p.title | jsonify }},"k":{{ p.type | jsonify }},"u":{{ p.url | relative_url | jsonify }}},
+  {%- endfor -%}
+  {%- for w in site.works -%}
+    {%- for s in w.stages -%}
+      {%- if s.date -%}
+    {"d":"{{ s.date | date: '%Y-%m-%d' }}","t":{{ w.title | append: " — " | append: s.label | jsonify }},"k":"painting","u":{{ w.url | relative_url | jsonify }}},
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+    null
+  ]
+  </script>
+  <div class="calendar__main">
+    <p class="calendar__summary" data-calendar-summary></p>
+    <div class="calendar__scroll" data-calendar-scroll>
+      <div class="calendar__grid" data-calendar-grid role="img" aria-label="Calendar of recorded studio days over the past year"></div>
+    </div>
+    <p class="calendar__legend">
+      <span>Less</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><span>More</span>
+    </p>
+  </div>
+  <p class="calendar__note">
+    Each square is a day. Filled squares are days with a journal entry or a
+    photographed stage of a painting. Select one to see what happened.
+  </p>
+</div>

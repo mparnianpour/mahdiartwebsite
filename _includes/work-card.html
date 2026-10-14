@@ -1,0 +1,17 @@
+{% include work-stats.html work=include.work %}
+<article class="work-card">
+  <a class="work-card__link" href="{{ include.work.url | relative_url }}">
+    <div class="work-card__frame">
+      <img src="{{ include.work.image | relative_url }}" alt="{{ include.work.title }}" loading="lazy" decoding="async">
+    </div>
+    <h3 class="work-card__title">{{ include.work.title }}</h3>
+    <p class="work-card__meta">
+      {{ include.work.year }}{% if include.work.status == "In progress" %} <span class="badge">In progress</span>{% endif %}
+    </p>
+    {% if ws_frames > 1 or ws_sketches > 0 %}
+    <p class="work-card__process">
+      {% if ws_frames > 1 %}{{ ws_frames }} stages{% endif %}{% if ws_frames > 1 and ws_sketches > 0 %} · {% endif %}{% if ws_sketches > 0 %}{{ ws_sketches }} sketch{% if ws_sketches != 1 %}es{% endif %}{% endif %}
+    </p>
+    {% endif %}
+  </a>
+</article>

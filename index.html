@@ -1,0 +1,74 @@
+---
+layout: default
+body_class: page-home
+---
+{% assign works = site.works | sort: "date" | reverse %}
+{% assign featured = works | where: "featured", true | first %}
+{% unless featured %}{% assign featured = works | first %}{% endunless %}
+
+<section class="wrap intro">
+  <h1 class="intro__headline">{{ site.intro.headline }}</h1>
+  <p class="intro__text">{{ site.intro.text }}</p>
+</section>
+
+{% if featured %}
+{% include work-stats.html work=featured %}
+<section class="wrap featured" aria-labelledby="featured-title">
+  <a class="featured__image" href="{{ featured.url | relative_url }}">
+    <img src="{{ featured.image | relative_url }}" alt="{{ featured.title }}, {{ featured.year }}">
+  </a>
+  <div class="featured__info">
+    <p class="eyebrow">Featured work</p>
+    <h2 class="featured__title" id="featured-title"><a href="{{ featured.url | relative_url }}">{{ featured.title }}</a></h2>
+    <p class="featured__line">{{ featured.year }}{% if featured.medium %} · {{ featured.medium }}{% endif %}{% if featured.size %} · {{ featured.size }}{% endif %}</p>
+    {% if ws_frames > 1 %}
+    <p class="featured__process">
+      Made in {{ ws_frames }} stages{% if ws_days and ws_days > 0 %} over {{ ws_days }} days{% endif %}{% if ws_sketches > 0 %}, from {{ ws_sketches }} sketch{% if ws_sketches != 1 %}es{% endif %}{% endif %}.
+    </p>
+    <ol class="mini-strip" aria-label="Stages of {{ featured.title }}">
+      {% for s in featured.stages %}
+      <li><img src="{{ s.image | relative_url }}" alt="" loading="lazy" decoding="async"></li>
+      {% endfor %}
+      {% if ws_append_final %}<li><img src="{{ featured.image | relative_url }}" alt="" loading="lazy" decoding="async"></li>{% endif %}
+    </ol>
+    <a class="arrow-link" href="{{ featured.url | relative_url }}#process">See how it was made</a>
+    {% else %}
+    <a class="arrow-link" href="{{ featured.url | relative_url }}">View the work</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<section class="wrap section">
+  <header class="section__head">
+    <h2 class="section__title">Works</h2>
+    <a class="arrow-link" href="{{ '/works/' | relative_url }}">All works</a>
+  </header>
+  <div class="work-grid">
+    {% for w in works limit: 6 %}
+      {% include work-card.html work=w %}
+    {% endfor %}
+  </div>
+</section>
+
+{% if site.posts.size > 0 %}
+<section class="wrap section">
+  <header class="section__head">
+    <h2 class="section__title">In the studio</h2>
+    <a class="arrow-link" href="{{ '/journal/' | relative_url }}">Studio journal</a>
+  </header>
+  {% include studio-calendar.html %}
+  <div class="entry-grid">
+    {% for e in site.posts limit: 4 %}
+      {% include entry-card.html entry=e %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="wrap section statement-teaser">
+  <p class="eyebrow">Statement</p>
+  {% assign about = site.pages | where: "url", "/about/" | first %}
+  <blockquote class="statement-teaser__quote">{{ about.statement_short }}</blockquote>
+  <a class="arrow-link" href="{{ '/about/' | relative_url }}">Read the full statement</a>
+</section>
