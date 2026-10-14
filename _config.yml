@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------
+#  Site settings — edit these first.
+# ---------------------------------------------------------------
+title: Mahdi Parnianpour
+tagline: Painter
+description: >-
+  Abstract paintings by Mahdi Parnianpour, shown together with the
+  sketches, stages and daily studio work that produced them.
+
+# Large text at the top of the home page.
+intro:
+  headline: Abstract paintings that are worked out, not arranged.
+  text: >-
+    Every painting here began with sketches and changed through many
+    stages before it was finished. Those stages are shown alongside the
+    work, together with a daily record from the studio.
+
+# Contact. Leave email empty ("") to hide it everywhere.
+instagram: mahdi.parnianpour
+email: ""
+
+# Optional portrait for the About page, e.g. /assets/img/portrait.jpg
+portrait: ""
+
+# Address of the site.
+#   GitHub Pages project site:  url: https://mparnianpour.github.io   baseurl: /mahdiartwebsite
+#   Own domain (e.g. mahdiparnianpour.com):   url: https://mahdiparnianpour.com   baseurl: ""
+url: https://mparnianpour.github.io
+baseurl: /mahdiartwebsite
+
+# ---------------------------------------------------------------
+#  You normally don't need to change anything below this line.
+# ---------------------------------------------------------------
+lang: en
+markdown: kramdown
+theme: null   # this site has its own design
+
+collections:
+  works:
+    output: true
+    permalink: /works/:name/
+
+# Journal entries live in _posts/
+permalink: /journal/:year/:month/:day/:title/
+paginate: 20
+paginate_path: /journal/page:num/
+
+defaults:
+  - scope: { path: "", type: works }
+    values: { layout: work }
+  - scope: { path: "", type: posts }
+    values: { layout: entry, type: studio }
+  - scope: { path: "" }
+    values: { layout: default }
+
+feed:
+  path: journal/feed.xml
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-paginate
+
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .bundle

@@ -1,0 +1,17 @@
+---
+layout: page
+title: Works
+lede: Each work is shown with the sketches and stages it went through. Select a painting to see how it was made.
+---
+{% assign works = site.works | sort: "date" | reverse %}
+{% assign years = works | group_by: "year" %}
+{% for group in years %}
+<section class="year-group">
+  <h2 class="year-group__year">{{ group.name }}</h2>
+  <div class="work-grid">
+    {% for w in group.items %}
+      {% include work-card.html work=w %}
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}

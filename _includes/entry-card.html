@@ -1,0 +1,19 @@
+{% assign e = include.entry %}
+<article class="entry-card">
+  <a class="entry-card__link" href="{{ e.url | relative_url }}">
+    {% if e.images.size > 0 %}
+    <div class="entry-card__img">
+      <img src="{{ e.images[0] | relative_url }}" alt="{{ e.title }}" loading="lazy" decoding="async">
+    </div>
+    {% else %}
+    <div class="entry-card__img entry-card__img--text">
+      <p>{{ e.excerpt | strip_html | truncatewords: 22 }}</p>
+    </div>
+    {% endif %}
+    <p class="entry-card__meta">
+      <time datetime="{{ e.date | date_to_xmlschema }}">{{ e.date | date: "%-d %b %Y" }}</time>
+      <span class="type type--{{ e.type }}">{{ e.type }}</span>
+    </p>
+    <h3 class="entry-card__title">{{ e.title }}</h3>
+  </a>
+</article>

@@ -1,0 +1,23 @@
+---
+layout: page
+title: Studio journal
+lede: A running record of what happens in the studio — painting sessions, sketches, tests and notes — written on the day.
+---
+<p class="page__meta"><a href="{{ '/journal/feed.xml' | relative_url }}">Subscribe to the journal feed</a></p>
+<div class="log-list">
+  {% for post in paginator.posts %}
+    {% include entry-body.html entry=post %}
+  {% endfor %}
+</div>
+
+{% if paginator.total_pages > 1 %}
+<nav class="pager" aria-label="Journal pages">
+  {% if paginator.previous_page %}
+    <a class="pager__prev" href="{{ paginator.previous_page_path | relative_url }}"><span>Newer</span>Newer entries</a>
+  {% else %}<span></span>{% endif %}
+  <span class="pager__count">Page {{ paginator.page }} of {{ paginator.total_pages }}</span>
+  {% if paginator.next_page %}
+    <a class="pager__next" href="{{ paginator.next_page_path | relative_url }}"><span>Older</span>Older entries</a>
+  {% endif %}
+</nav>
+{% endif %}

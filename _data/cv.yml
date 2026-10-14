@@ -1,0 +1,17 @@
+# Your CV for the About page.
+# Add items under a section. Sections with no items are not shown.
+# Example item:
+#   - year: 2026
+#     text: "Title of exhibition, Gallery name, City (group exhibition)"
+
+- section: Exhibitions
+  items: []
+
+- section: Education
+  items: []
+
+- section: Residencies & awards
+  items: []
+
+- section: Publications & press
+  items: []

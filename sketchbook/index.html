@@ -1,0 +1,70 @@
+---
+layout: page
+title: Sketchbook
+lede: Drawing comes first. Some sketches are daily practice; others become paintings.
+---
+{% assign daily = site.posts | where: "type", "sketch" %}
+{% if daily.size > 0 %}
+<section class="section section--flush">
+  <header class="section__head">
+    <h2 class="section__title">From the sketchbook</h2>
+    <p class="section__aside">{{ daily.size }} journal entr{% if daily.size == 1 %}y{% else %}ies{% endif %}</p>
+  </header>
+  <div class="sketch-grid">
+    {% for e in daily %}
+      {% for img in e.images %}
+      <figure class="sketch">
+        <a href="{{ img | relative_url }}" class="zoomable" data-zoom data-caption="{{ e.title | escape }}, {{ e.date | date: '%-d %b %Y' }}">
+          <img src="{{ img | relative_url }}" alt="{{ e.title }}" loading="lazy" decoding="async">
+        </a>
+        <figcaption>
+          <time datetime="{{ e.date | date: '%Y-%m-%d' }}">{{ e.date | date: "%-d %b %Y" }}</time>
+          <a href="{{ e.url | relative_url }}">{{ e.title }}</a>
+        </figcaption>
+      </figure>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% assign works = site.works | sort: "date" | reverse %}
+{% assign has_studies = false %}
+{% for w in works %}{% if w.sketches.size > 0 %}{% assign has_studies = true %}{% endif %}{% endfor %}
+{% if has_studies %}
+<section class="section">
+  <header class="section__head">
+    <h2 class="section__title">Studies for paintings</h2>
+    <p class="section__aside">Sketches grouped by the painting they led to</p>
+  </header>
+  {% for w in works %}
+    {% if w.sketches.size > 0 %}
+    <div class="study-group">
+      <h3 class="study-group__title">
+        <a href="{{ w.url | relative_url }}">{{ w.title }}</a>
+        <span>{{ w.year }}</span>
+      </h3>
+      <div class="sketch-grid">
+        {% for sk in w.sketches %}
+        <figure class="sketch">
+          <a href="{{ sk.image | relative_url }}" class="zoomable" data-zoom data-caption="Sketch for {{ w.title | escape }}">
+            <img src="{{ sk.image | relative_url }}" alt="Sketch for {{ w.title }}" loading="lazy" decoding="async">
+          </a>
+          {% if sk.caption or sk.date %}
+          <figcaption>
+            {% if sk.date %}<time datetime="{{ sk.date | date: '%Y-%m-%d' }}">{{ sk.date | date: "%-d %b %Y" }}</time>{% endif %}
+            {% if sk.caption %}<span>{{ sk.caption }}</span>{% endif %}
+          </figcaption>
+          {% endif %}
+        </figure>
+        {% endfor %}
+        <a class="study-group__result" href="{{ w.url | relative_url }}">
+          <img src="{{ w.image | relative_url }}" alt="{{ w.title }}" loading="lazy" decoding="async">
+          <span>Became: {{ w.title }}</span>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</section>
+{% endif %}

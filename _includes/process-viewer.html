@@ -1,0 +1,42 @@
+{% comment %}
+  Shows every stage of a painting. Without JavaScript the stages are listed
+  one after another; with JavaScript they become a step-through viewer.
+{% endcomment %}
+{% include work-stats.html work=include.work %}
+{% assign w = include.work %}
+<div class="process" data-process>
+  <div class="process__view">
+    {% for s in w.stages %}
+    <figure class="process__frame" data-frame>
+      <img src="{{ s.image | relative_url }}" alt="{{ w.title }}, {{ s.label | default: 'stage' }}{% if s.date %}, {{ s.date | date: '%-d %B %Y' }}{% endif %}" loading="lazy" decoding="async">
+      <figcaption class="process__info">
+        <span class="process__step">Stage {{ forloop.index }}</span>
+        {% if s.label %}<span class="process__label">{{ s.label }}</span>{% endif %}
+        {% if s.date %}<time class="process__date" datetime="{{ s.date | date: '%Y-%m-%d' }}">{{ s.date | date: "%-d %b %Y" }}</time>{% endif %}
+        {% if s.note %}<span class="process__note">{{ s.note }}</span>{% endif %}
+      </figcaption>
+    </figure>
+    {% endfor %}
+    {% if ws_append_final %}
+    <figure class="process__frame" data-frame>
+      <img src="{{ w.image | relative_url }}" alt="{{ w.title }}, {% if w.status == 'In progress' %}current state{% else %}finished{% endif %}" loading="lazy" decoding="async">
+      <figcaption class="process__info">
+        <span class="process__step">Stage {{ ws_frames }}</span>
+        <span class="process__label">{% if w.status == "In progress" %}Current state{% else %}Finished{% endif %}</span>
+        {% if w.date %}<time class="process__date" datetime="{{ w.date | date: '%Y-%m-%d' }}">{{ w.date | date: "%-d %b %Y" }}</time>{% endif %}
+      </figcaption>
+    </figure>
+    {% endif %}
+  </div>
+
+  <div class="process__panel" data-panel hidden>
+    <div class="process__caption" data-stage-caption aria-live="polite"></div>
+    <div class="process__controls">
+      <button type="button" class="process__btn" data-prev aria-label="Previous stage">&larr;</button>
+      <input type="range" class="process__range" min="0" max="{{ ws_frames | minus: 1 }}" value="0" step="1" data-range aria-label="Stage of the painting">
+      <button type="button" class="process__btn" data-next aria-label="Next stage">&rarr;</button>
+      <span class="process__count"><span data-current>1</span>&thinsp;/&thinsp;{{ ws_frames }}</span>
+    </div>
+    <ol class="process__strip" data-strip aria-label="All stages"></ol>
+  </div>
+</div>
