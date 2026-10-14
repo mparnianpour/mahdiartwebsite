@@ -1,0 +1,114 @@
+---
+layout: default
+body_class: page-work
+---
+{% include work-stats.html work=page %}
+{% assign sorted_works = site.works | sort: "date" | reverse %}
+<article class="work">
+  <header class="wrap work__head">
+    <p class="eyebrow"><a href="{{ '/works/' | relative_url }}">Works</a></p>
+    <h1 class="work__title">{{ page.title }}</h1>
+    <p class="work__line">
+      {{ page.year }}{% if page.medium %} · {{ page.medium }}{% endif %}{% if page.size %} · {{ page.size }}{% endif %}
+      {% if page.status == "In progress" %}<span class="badge">In progress</span>{% endif %}
+    </p>
+  </header>
+
+  <figure class="wrap work__hero">
+    <a href="{{ page.image | relative_url }}" class="zoomable" data-zoom data-caption="{{ page.title }}, {{ page.year }}">
+      <img src="{{ page.image | relative_url }}" alt="{{ page.title }}, {{ page.year }}{% if page.medium %}, {{ page.medium }}{% endif %}">
+    </a>
+  </figure>
+
+  <div class="wrap work__body">
+    <dl class="facts">
+      {% if page.year %}<div><dt>Year</dt><dd>{{ page.year }}</dd></div>{% endif %}
+      {% if page.medium %}<div><dt>Medium</dt><dd>{{ page.medium }}</dd></div>{% endif %}
+      {% if page.size %}<div><dt>Size</dt><dd>{{ page.size }}</dd></div>{% endif %}
+      {% if ws_start %}<div><dt>Worked on</dt><dd>{{ ws_start | date: "%-d %b %Y" }} – {% if page.status == "In progress" %}ongoing{% else %}{{ ws_end | date: "%-d %b %Y" }}{% endif %}</dd></div>{% endif %}
+      {% if ws_frames > 1 %}<div><dt>Stages recorded</dt><dd>{{ ws_frames }}</dd></div>{% endif %}
+      {% if ws_sketches > 0 %}<div><dt>Sketches</dt><dd>{{ ws_sketches }}</dd></div>{% endif %}
+      {% if ws_sessions > 0 %}<div><dt>Journal entries</dt><dd>{{ ws_sessions }}</dd></div>{% endif %}
+      {% if page.availability %}<div><dt>Availability</dt><dd>{{ page.availability }}</dd></div>{% endif %}
+    </dl>
+    <div class="prose work__text">
+      {{ content }}
+    </div>
+  </div>
+
+  {% if ws_frames > 1 %}
+  <section class="wrap section" id="process">
+    <header class="section__head">
+      <h2 class="section__title">How it was made</h2>
+      <p class="section__aside">
+        {{ ws_frames }} stages{% if ws_days and ws_days > 0 %} over {{ ws_days }} days{% endif %}
+      </p>
+    </header>
+    {% include process-viewer.html work=page %}
+  </section>
+  {% endif %}
+
+  {% if ws_sketches > 0 %}
+  <section class="wrap section" id="sketches">
+    <header class="section__head">
+      <h2 class="section__title">Sketches</h2>
+      <p class="section__aside">Studies made before and during the painting</p>
+    </header>
+    <div class="sketch-grid">
+      {% for sk in page.sketches %}
+      <figure class="sketch">
+        <a href="{{ sk.image | relative_url }}" class="zoomable" data-zoom data-caption="{{ sk.caption | default: page.title | escape }}">
+          <img src="{{ sk.image | relative_url }}" alt="Sketch for {{ page.title }}{% if sk.caption %}: {{ sk.caption }}{% endif %}" loading="lazy" decoding="async">
+        </a>
+        {% if sk.caption or sk.date %}
+        <figcaption>
+          {% if sk.date %}<time datetime="{{ sk.date | date: '%Y-%m-%d' }}">{{ sk.date | date: "%-d %b %Y" }}</time>{% endif %}
+          {% if sk.caption %}<span>{{ sk.caption }}</span>{% endif %}
+        </figcaption>
+        {% endif %}
+      </figure>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if ws_sessions > 0 %}
+  <section class="wrap section" id="journal">
+    <header class="section__head">
+      <h2 class="section__title">From the studio journal</h2>
+      <p class="section__aside">Entries written while working on this painting</p>
+    </header>
+    <div class="entry-grid">
+      {% for e in ws_entries %}
+        {% include entry-card.html entry=e %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="wrap section inquire">
+    <p>
+      For questions about this work{% if page.availability %} or its availability{% endif %},
+      {% if site.email and site.email != "" %}
+        <a href="mailto:{{ site.email }}?subject={{ page.title | url_encode }}">write to me</a>{% if site.instagram %} or send a message on <a href="https://instagram.com/{{ site.instagram }}">Instagram</a>{% endif %}.
+      {% elsif site.instagram %}
+        send a message on <a href="https://instagram.com/{{ site.instagram }}">Instagram</a>.
+      {% endif %}
+    </p>
+  </section>
+
+  {% for w in sorted_works %}
+    {% if w.url == page.url %}
+      {% assign prev_index = forloop.index0 | minus: 1 %}
+      {% assign next_index = forloop.index0 | plus: 1 %}
+    {% endif %}
+  {% endfor %}
+  {% if prev_index >= 0 %}{% assign newer = sorted_works[prev_index] %}{% endif %}
+  {% assign older = sorted_works[next_index] %}
+  <div class="wrap">
+    <nav class="pager" aria-label="More works">
+      {% if newer %}<a class="pager__prev" href="{{ newer.url | relative_url }}"><span>Newer</span>{{ newer.title }}</a>{% else %}<span></span>{% endif %}
+      {% if older %}<a class="pager__next" href="{{ older.url | relative_url }}"><span>Older</span>{{ older.title }}</a>{% endif %}
+    </nav>
+  </div>
+</article>
