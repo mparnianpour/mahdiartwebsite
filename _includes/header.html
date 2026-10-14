@@ -1,0 +1,17 @@
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <a class="wordmark" href="{{ '/' | relative_url }}">
+      <span class="wordmark__name">{{ site.title }}</span>
+      {% if site.tagline %}<span class="wordmark__tag">{{ site.tagline }}</span>{% endif %}
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        {% for item in site.data.navigation %}
+          {% assign is_current = false %}
+          {% if page.url contains item.url %}{% assign is_current = true %}{% endif %}
+          <li><a href="{{ item.url | relative_url }}"{% if is_current %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+</header>

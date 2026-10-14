@@ -1,0 +1,31 @@
+{% assign e = include.entry %}
+{% if e.work %}{% assign e_work = site.works | where: "slug", e.work | first %}{% else %}{% assign e_work = nil %}{% endif %}
+<div class="log">
+  <div class="log__date">
+    <time datetime="{{ e.date | date_to_xmlschema }}">
+      <span class="log__day">{{ e.date | date: "%-d" }}</span>
+      <span class="log__month">{{ e.date | date: "%b %Y" }}</span>
+    </time>
+    <span class="type type--{{ e.type }}">{{ e.type }}</span>
+  </div>
+  <div class="log__main">
+    {% if include.full %}
+      <h1 class="log__title">{{ e.title }}</h1>
+    {% else %}
+      <h2 class="log__title"><a href="{{ e.url | relative_url }}">{{ e.title }}</a></h2>
+    {% endif %}
+    {% if e.images.size > 0 %}
+    <div class="log__images log__images--{{ e.images.size | at_most: 3 }}">
+      {% for img in e.images %}
+      <a href="{{ img | relative_url }}" class="zoomable" data-zoom data-caption="{{ e.title | escape }}, {{ e.date | date: '%-d %b %Y' }}">
+        <img src="{{ img | relative_url }}" alt="{{ e.title }}{% if e.images.size > 1 %} ({{ forloop.index }} of {{ e.images.size }}){% endif %}" loading="lazy" decoding="async">
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="prose log__text">{{ e.content }}</div>
+    {% if e_work %}
+    <p class="log__work">Part of <a href="{{ e_work.url | relative_url }}">{{ e_work.title }}</a></p>
+    {% endif %}
+  </div>
+</div>
