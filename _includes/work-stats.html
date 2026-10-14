@@ -1,0 +1,20 @@
+{%- assign w = include.work -%}
+{%- assign ws_frames = w.stages.size | default: 0 -%}
+{%- assign ws_append_final = false -%}
+{%- assign ws_last = w.stages | last -%}
+{%- if w.image and w.image != ws_last.image -%}
+  {%- assign ws_append_final = true -%}
+  {%- assign ws_frames = ws_frames | plus: 1 -%}
+{%- endif -%}
+{%- assign ws_first = w.stages | first -%}
+{%- assign ws_start = ws_first.date -%}
+{%- assign ws_end = w.date -%}
+{%- assign ws_days = nil -%}
+{%- if ws_start and ws_end -%}
+  {%- assign ws_s = ws_start | date: "%s" | plus: 0 -%}
+  {%- assign ws_e = ws_end | date: "%s" | plus: 0 -%}
+  {%- assign ws_days = ws_e | minus: ws_s | divided_by: 86400 -%}
+{%- endif -%}
+{%- assign ws_entries = site.posts | where: "work", w.slug -%}
+{%- assign ws_sessions = ws_entries.size -%}
+{%- assign ws_sketches = w.sketches.size | default: 0 -%}
