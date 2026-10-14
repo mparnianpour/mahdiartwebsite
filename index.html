@@ -39,17 +39,20 @@ body_class: page-home
 </section>
 {% endif %}
 
+{% assign other_works = works | where_exp: "w", "w.url != featured.url" %}
+{% if other_works.size > 0 %}
 <section class="wrap section">
   <header class="section__head">
-    <h2 class="section__title">Works</h2>
+    <h2 class="section__title">More works</h2>
     <a class="arrow-link" href="{{ '/works/' | relative_url }}">All works</a>
   </header>
   <div class="work-grid">
-    {% for w in works limit: 6 %}
+    {% for w in other_works limit: 6 %}
       {% include work-card.html work=w %}
     {% endfor %}
   </div>
 </section>
+{% endif %}
 
 {% if site.posts.size > 0 %}
 <section class="wrap section">

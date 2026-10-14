@@ -11,16 +11,16 @@ description: >-
 intro:
   headline: Abstract paintings that are worked out, not arranged.
   text: >-
-    Every painting here began with sketches and changed through many
-    stages before it was finished. Those stages are shown alongside the
-    work, together with a daily record from the studio.
+    Each painting here is shown together with the stages it went
+    through, from the first layers on the canvas to the finished work,
+    so you can see how it was made.
 
 # Contact. Leave email empty ("") to hide it everywhere.
 instagram: mahdi.parnianpour
 email: ""
 
 # Optional portrait for the About page, e.g. /assets/img/portrait.jpg
-portrait: ""
+portrait: /assets/img/works/ships-fate/stage-1.jpg
 
 # Address of the site.
 #   GitHub Pages project site:  url: https://mparnianpour.github.io   baseurl: /mahdiartwebsite

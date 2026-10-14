@@ -12,20 +12,18 @@ see the thinking and decisions behind each abstract work.
 | **Sketchbook** | Daily sketches, and sketches grouped by the painting they led to |
 | **About** | Statement, biography, CV, contact |
 
-Everything you see now is **example content** with placeholder images marked
-“EXAMPLE IMAGE”. Replace it with your own work (steps below).
+Live at **https://mparnianpour.github.io/mahdiartwebsite/**
+
+The **Journal** and **Sketchbook** links appear in the menu automatically once
+they have entries.
 
 ---
 
-## 1. Put the site online (once)
+## 1. Publishing
 
-1. Merge this branch into `main`.
-2. On GitHub open **Settings → Pages**.
-3. Under **Build and deployment** choose **Deploy from a branch**, branch `main`, folder `/ (root)`, and save.
-4. After a minute or two the site is live at
-   **https://mparnianpour.github.io/mahdiartwebsite/**
-
-Every change you commit to `main` after that updates the site automatically.
+GitHub Pages builds the site from the `main` branch
+(**Settings → Pages → Deploy from a branch**, `main`, `/ (root)`).
+Every change committed to `main` updates the live site within a minute or two.
 
 ## 2. Edit your details
 
@@ -86,16 +84,7 @@ Each entry also fills in a square on the studio calendar on the home page.
   have them. Otherwise download your posts via Instagram
   **Settings → Accounts Center → Your information and permissions → Download your information**.
 
-## 6. Remove the examples
-
-When you have added your own work, delete:
-
-- `_works/example-1.md`, `_works/example-2.md`, `_works/example-3.md`
-- every file in `_posts/` that you did not write
-- the folders `assets/img/works/example-1`, `example-2`, `example-3`
-- the example images in `assets/img/journal/`
-
-## 7. Your own domain (optional)
+## 6. Your own domain (optional)
 
 If you buy a domain such as `mahdiparnianpour.com`, add it under
 **Settings → Pages → Custom domain**, then in `_config.yml` set
