@@ -1,0 +1,12 @@
+---
+layout: default
+body_class: page-entry
+---
+<article class="wrap entry">
+  <p class="eyebrow"><a href="{{ '/journal/' | relative_url }}">Journal</a></p>
+  {% include entry-body.html entry=page full=true %}
+  <nav class="pager" aria-label="More entries">
+    {% if page.next %}<a class="pager__prev" href="{{ page.next.url | relative_url }}"><span>Newer</span>{{ page.next.title }}</a>{% else %}<span></span>{% endif %}
+    {% if page.previous %}<a class="pager__next" href="{{ page.previous.url | relative_url }}"><span>Older</span>{{ page.previous.title }}</a>{% endif %}
+  </nav>
+</article>

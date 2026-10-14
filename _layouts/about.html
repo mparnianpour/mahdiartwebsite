@@ -1,0 +1,45 @@
+---
+layout: default
+body_class: page-about
+---
+<article class="wrap page about">
+  <header class="page__head">
+    <h1 class="page__title">{{ page.title }}</h1>
+  </header>
+  <div class="about__grid">
+    <div class="prose about__text">
+      {{ content }}
+    </div>
+    <aside class="about__side">
+      {% if site.portrait and site.portrait != "" %}
+      <img class="about__portrait" src="{{ site.portrait | relative_url }}" alt="{{ site.title }} in the studio">
+      {% endif %}
+      <h2 class="about__side-title">Contact</h2>
+      <ul class="contact-list">
+        {% if site.email and site.email != "" %}<li><span>Email</span><a href="mailto:{{ site.email }}">{{ site.email }}</a></li>{% endif %}
+        {% if site.instagram %}<li><span>Instagram</span><a href="https://instagram.com/{{ site.instagram }}" rel="me">@{{ site.instagram }}</a></li>{% endif %}
+      </ul>
+      <p class="about__note">For studio visits, exhibitions and questions about available works, please get in touch.</p>
+    </aside>
+  </div>
+
+  {% assign cv_has_items = false %}
+  {% for block in site.data.cv %}{% if block.items.size > 0 %}{% assign cv_has_items = true %}{% endif %}{% endfor %}
+  {% if cv_has_items %}
+  <section class="section cv">
+    <h2 class="section__title">CV</h2>
+    {% for block in site.data.cv %}
+      {% if block.items.size > 0 %}
+      <div class="cv__block">
+        <h3 class="cv__heading">{{ block.section }}</h3>
+        <ul class="cv__list">
+          {% for item in block.items %}
+          <li><span class="cv__year">{{ item.year }}</span><span>{{ item.text }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </section>
+  {% endif %}
+</article>
