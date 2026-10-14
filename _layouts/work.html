@@ -105,10 +105,12 @@ body_class: page-work
   {% endfor %}
   {% if prev_index >= 0 %}{% assign newer = sorted_works[prev_index] %}{% endif %}
   {% assign older = sorted_works[next_index] %}
+  {% if newer or older %}
   <div class="wrap">
     <nav class="pager" aria-label="More works">
       {% if newer %}<a class="pager__prev" href="{{ newer.url | relative_url }}"><span>Newer</span>{{ newer.title }}</a>{% else %}<span></span>{% endif %}
       {% if older %}<a class="pager__next" href="{{ older.url | relative_url }}"><span>Older</span>{{ older.title }}</a>{% endif %}
     </nav>
   </div>
+  {% endif %}
 </article>

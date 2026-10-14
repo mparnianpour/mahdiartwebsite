@@ -23,7 +23,7 @@
       <figcaption class="process__info">
         <span class="process__step">Stage {{ ws_frames }}</span>
         <span class="process__label">{% if w.status == "In progress" %}Current state{% else %}Finished{% endif %}</span>
-        {% if w.date %}<time class="process__date" datetime="{{ w.date | date: '%Y-%m-%d' }}">{{ w.date | date: "%-d %b %Y" }}</time>{% endif %}
+        {% if ws_start and w.date %}<time class="process__date" datetime="{{ w.date | date: '%Y-%m-%d' }}">{{ w.date | date: "%-d %b %Y" }}</time>{% endif %}
       </figcaption>
     </figure>
     {% endif %}
