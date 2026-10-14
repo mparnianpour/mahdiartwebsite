@@ -31,6 +31,9 @@ lede: Drawing comes first. Some sketches are daily practice; others become paint
 {% assign works = site.works | sort: "date" | reverse %}
 {% assign has_studies = false %}
 {% for w in works %}{% if w.sketches.size > 0 %}{% assign has_studies = true %}{% endif %}{% endfor %}
+{% if daily.size == 0 and has_studies == false %}
+<p class="page__lede">The first sketches will appear here soon.</p>
+{% endif %}
 {% if has_studies %}
 <section class="section">
   <header class="section__head">

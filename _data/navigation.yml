@@ -2,7 +2,9 @@
   url: /works/
 - title: Journal
   url: /journal/
+  needs: journal
 - title: Sketchbook
   url: /sketchbook/
+  needs: sketches
 - title: About
   url: /about/
