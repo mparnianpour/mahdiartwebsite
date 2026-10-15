@@ -38,11 +38,11 @@ Every change committed to `main` updates the live site within a minute or two.
 
 You can do all of this in the browser on github.com.
 
-1. **Upload the photos.** Go to `assets/img/works/`, click **Add file → Upload files**,
-   and upload them into a new folder named after the painting,
-   e.g. `assets/img/works/blue-ground/`
-   (type `blue-ground/` in front of the file name to create the folder).
-   Use simple names: `stage-1.jpg`, `stage-2.jpg`, …, `final.jpg`, `sketch-1.jpg`.
+1. **Watermark and add the photos.** Every photo must go through
+   `tools/protect_image.py` first (see **5. Photos**); don't upload photos
+   straight from your phone. Put them in a folder named after the painting,
+   e.g. `assets/img/works/blue-ground/`, with simple names:
+   `stage-1.jpg`, `stage-2.jpg`, …, `final.jpg`, `sketch-1.jpg`.
 2. **Create the page.** Go to `_works/`, click **Add file → Create new file**,
    name it `blue-ground.md`, and paste in the contents of
    [`_templates/work.md`](_templates/work.md). Fill in the title, size,
@@ -74,8 +74,18 @@ Each entry also fills in a square on the studio calendar on the home page.
 
 ## 5. Photos
 
-- **Size:** resize to about **2000 px** on the long side and save as JPG
-  (around 300–800 KB). Photos straight from a phone are much larger and make the site slow.
+- **Watermark every photo.** Run each one through the script before adding it:
+
+  ```
+  python3 tools/protect_image.py phone-photo.jpg assets/img/works/blue-ground/final.jpg
+  ```
+
+  It resizes the photo to at most 2000 px, adds a faint diagonal
+  "© MAHDI PARNIANPOUR" across the image and a "© year Mahdi Parnianpour"
+  credit in the corner, and embeds your copyright with a "no AI training"
+  flag (IPTC/PLUS Data Mining) in the file. Use `--crop x0,y0,x1,y1` to
+  crop first. The site's pages also carry "noai" and TDM-reservation tags.
+  Keep your full-resolution originals off GitHub.
 - **Stages:** photograph the canvas from the same spot and in the same light
   each time. The stage viewer fades from one photo to the next, so consistent
   photos show the changes clearly.

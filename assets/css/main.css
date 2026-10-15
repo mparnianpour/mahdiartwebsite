@@ -207,6 +207,7 @@ time {
   gap: 12px 32px;
   padding-block: 32px 40px;
 }
+.site-footer__rights { margin-top: 4px; font-size: 12px; color: var(--ink-3); }
 .site-footer__links {
   display: flex;
   flex-wrap: wrap;

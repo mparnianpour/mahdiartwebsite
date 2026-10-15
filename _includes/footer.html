@@ -1,6 +1,9 @@
 <footer class="site-footer">
   <div class="wrap site-footer__inner">
-    <p class="site-footer__name">&copy; {{ site.time | date: "%Y" }} {{ site.title }}</p>
+    <div>
+      <p class="site-footer__name">&copy; {{ site.time | date: "%Y" }} {{ site.title }}</p>
+      <p class="site-footer__rights">All rights reserved. Images may not be reproduced or used for AI training without permission.</p>
+    </div>
     <ul class="site-footer__links">
       {% if site.instagram %}<li><a href="https://instagram.com/{{ site.instagram }}" rel="me">Instagram</a></li>{% endif %}
       {% if site.email and site.email != "" %}<li><a href="mailto:{{ site.email }}">Email</a></li>{% endif %}
