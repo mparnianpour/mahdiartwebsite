@@ -19,6 +19,14 @@ intro:
 instagram: mahdi.parnianpour
 email: ""
 
+# Visitor comments go through a Google Form (see README, "Visitor comments").
+# Leave form empty to hide the Comments page.
+comments:
+  form: ""      # the id in the form's link: docs.google.com/forms/d/e/<id>/viewform
+  name: ""      # entry ids from the form's pre-filled link, e.g. entry.123456789
+  work: ""
+  message: ""
+
 # Optional portrait for the About page, e.g. /assets/img/portrait.jpg
 portrait: /assets/img/works/ships-fate/stage-1.jpg
 
@@ -64,8 +72,11 @@ plugins:
 
 exclude:
   - README.md
+  - CLAUDE.md
   - Gemfile
   - Gemfile.lock
   - vendor
   - .bundle
   - tools
+  - pipeline
+  - archive

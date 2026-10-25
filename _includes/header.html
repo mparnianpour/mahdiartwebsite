@@ -10,9 +10,11 @@
         {% assign has_sketches = false %}
         {% if sketch_posts.size > 0 %}{% assign has_sketches = true %}{% endif %}
         {% for w in site.works %}{% if w.sketches.size > 0 %}{% assign has_sketches = true %}{% endif %}{% endfor %}
+        {% if site.data.vault and site.data.vault.drawings > 0 %}{% assign has_sketches = true %}{% endif %}
         {% for item in site.data.navigation %}
           {% if item.needs == "journal" and site.posts.size == 0 %}{% continue %}{% endif %}
           {% if item.needs == "sketches" and has_sketches == false %}{% continue %}{% endif %}
+          {% if item.needs == "comments" and site.comments.form == "" and site.data.comments == nil %}{% continue %}{% endif %}
           {% assign is_current = false %}
           {% if page.url contains item.url %}{% assign is_current = true %}{% endif %}
           <li><a href="{{ item.url | relative_url }}"{% if is_current %} aria-current="page"{% endif %}>{{ item.title }}</a></li>
