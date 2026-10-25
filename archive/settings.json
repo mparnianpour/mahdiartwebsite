@@ -1,0 +1,8 @@
+{
+  "drive_folders": ["Takeout", "Studio Archive"],
+  "timezone": "Asia/Tehran",
+  "model_url": "https://github.com/mparnianpour/mahdiartwebsite/releases/download/models-v1/dinov2-small.onnx",
+  "model_sha256": "577717fc09fa8e19360035ea46729b7168dd28fc2c6b14f4c0bd0334c506c17f",
+  "comments_sheet": "",
+  "budget_limit": 0.8
+}

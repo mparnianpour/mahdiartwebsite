@@ -36,7 +36,8 @@ Every change committed to `main` updates the live site within a minute or two.
 
 ## 3. Add a painting
 
-You can do all of this in the browser on github.com.
+The archive pipeline (section 6) does this automatically from Google Drive.
+To add a painting by hand, you can do all of this in the browser on github.com.
 
 1. **Watermark and add the photos.** Every photo must go through
    `tools/protect_image.py` first (see **5. Photos**); don't upload photos
@@ -94,7 +95,50 @@ Each entry also fills in a square on the studio calendar on the home page.
   have them. Otherwise download your posts via Instagram
   **Settings → Accounts Center → Your information and permissions → Download your information**.
 
-## 6. Your own domain (optional)
+## 6. The archive pipeline (automatic)
+
+Instead of adding paintings by hand, photos can flow in from Google Drive.
+A scheduled Claude session runs a **batch** every few hours: it reads new
+photos from Drive, recognises which photos show the same painting (even
+months apart), writes a short note for each stage, puts sketches and
+drawings into the private sketchbook, reads visitor comments, reviews how the
+site presents the work, and publishes the result to `main`. It never uses
+more than 80% of your Claude plan's usage, so 20% always stays free for you.
+
+- **How to feed it:** export Google Photos albums with
+  [Google Takeout](https://takeout.google.com) to Drive (they arrive in the
+  `Takeout` folder), or let an auto-sync app copy new photos into a Drive
+  folder named `Studio Archive`. Full-size photos never go to GitHub.
+- **What it did:** each batch writes a log in [`archive/batches/`](archive/batches/),
+  with links to new works and a list of anything waiting for you.
+- **Titles:** new works get working titles like *Untitled (Reeds)*. Rename
+  them in the work's file in `_works/` (or ask Claude); later batches keep
+  your title, medium and size.
+- **How it works:** [`pipeline/PLAYBOOK.md`](pipeline/PLAYBOOK.md) has the
+  steps each batch follows; [`archive/`](archive/README.md) is its memory.
+
+### Private sketchbook
+
+Sketches and drawings are encrypted before they are added, and the
+**Sketchbook** page asks for a password to show them. The repository is
+public, so this is the only way to keep them private: without the password
+the files cannot be opened. The password is the `VAULT_PASSWORD` setting of
+the cloud environment; share it only with people who should see the drawings.
+
+### Visitor comments
+
+The **Comments** page sends comments to a Google Form; they appear on the
+site after a batch has read them.
+
+1. Create a Google Form with three questions: *Name* (short answer),
+   *About* (short answer) and *Comment* (paragraph, required).
+2. In the form's **Responses** tab, click **Link to Sheets**. Share that sheet
+   with the pipeline's service account (Viewer).
+3. Click **⋮ → Get pre-filled link**, type `x` in each field, **Get link**,
+   and send that link to Claude. It contains the ids that go into
+   `_config.yml` under `comments:`.
+
+## 7. Your own domain (optional)
 
 If you buy a domain such as `mahdiparnianpour.com`, add it under
 **Settings → Pages → Custom domain**, then in `_config.yml` set
