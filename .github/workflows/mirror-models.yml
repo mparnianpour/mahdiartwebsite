@@ -1,0 +1,35 @@
+# Copies the image model used by pipeline/ into this repository's
+# "models-v1" release, so pipeline runs can download it from GitHub.
+name: Mirror pipeline models
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/mirror-models.yml
+      - pipeline/export_model.py
+permissions:
+  contents: write
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers==4.46.3 onnx==1.17.0 onnxruntime==1.20.1 "numpy<2.2"
+      - name: Export DINOv2-small
+        run: |
+          python pipeline/export_model.py dinov2-small.onnx
+          sha256sum dinov2-small.onnx | tee dinov2-small.onnx.sha256
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view models-v1 >/dev/null 2>&1 || gh release create models-v1 \
+            --title "Pipeline models" \
+            --notes "Image model used by pipeline/ to group photos of the same painting. DINOv2-small (Apache-2.0, Meta), exported to ONNX by .github/workflows/mirror-models.yml."
+          gh release upload models-v1 dinov2-small.onnx dinov2-small.onnx.sha256 --clobber
