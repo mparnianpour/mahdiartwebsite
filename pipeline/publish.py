@@ -124,6 +124,52 @@ def publish_work(slug, works=None, photos=None, log=print):
     log(f"  page {page.relative_to(config.REPO)} ({len(w['stages'])} stages)")
 
 
+# --- hand-written pages -----------------------------------------------------------
+
+def adopt(log=print):
+    """Record the images of hand-written work pages (no `archive:` line) as published photos.
+
+    Those works were put on the site before the pipeline existed, or by hand
+    since. Recording them lets `propose` recognise later photos of the same
+    works, and photos that are already on the site, instead of proposing
+    them as new works. Returns the ids added.
+    """
+    import hashlib
+
+    photos = store.photos()
+    added = []
+    for page in sorted(config.WORK_PAGES.glob("*.md")):
+        fm, _ = _read_page(page)
+        if not fm or fm.get("archive"):
+            continue
+        slug = page.stem
+        items = [(st.get("image"), st.get("date"), "painting") for st in fm.get("stages") or []]
+        items.append((fm.get("image"), fm.get("date"), "painting"))
+        items += [(sk.get("image"), sk.get("date"), "drawing") for sk in fm.get("sketches") or []]
+        for path, date, kind in items:
+            f = config.REPO / str(path or "").lstrip("/")
+            if not path or not f.is_file():
+                continue
+            pid = hashlib.sha256(f.read_bytes()).hexdigest()[:12]
+            if pid in photos:
+                continue
+            day = date or fm.get("date") or datetime.date.today()
+            day = day if isinstance(day, datetime.date) else datetime.date.fromisoformat(str(day)[:10])
+            moment = datetime.datetime.combine(day, datetime.time(12)).replace(tzinfo=ingest.TZ)
+            with Image.open(f) as img:
+                w, h = ingest.make_thumb(pid, img)
+            photos[pid] = {"name": f.name, "album": "site", "source": {"site": str(path)}, "batch": "site",
+                           "added": store.now(), "taken": moment.strftime("%Y-%m-%dT%H:%M:%S"),
+                           "ts": int(moment.timestamp()), "taken_estimated": not date, "type": "image",
+                           "w": w, "h": h, "kind": kind, "work": slug, "status": "published"}
+            added.append(pid)
+    if added:
+        store.save(config.PHOTOS, photos)
+        sorter.embed(added, f"site-{datetime.date.today().isoformat()}", log)
+        log(f"recorded {len(added)} images from hand-written pages")
+    return added
+
+
 # --- applying decisions ---------------------------------------------------------
 
 def apply(path, log=print):

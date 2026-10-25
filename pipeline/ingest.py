@@ -254,7 +254,7 @@ def fetch(pids, log=print):
     Returns the ids that could not be fetched (their Drive files are gone).
     """
     photos, sources = store.photos(), store.load(config.SOURCES)
-    todo = [p for p in dict.fromkeys(pids) if not original_path(p)]
+    todo = [p for p in dict.fromkeys(pids) if not original_path(p) and "site" not in photos[p]["source"]]
     by_zip = {}
     for pid in todo:
         src = photos[pid]["source"]
@@ -309,15 +309,25 @@ def fetch(pids, log=print):
     return missing
 
 
+_site_sources = {}
+
+
 def thumb(pid):
     """A small JPEG of the photo for review sheets and embeddings, fetching it if needed."""
     path = config.THUMBS / f"{pid}.jpg"
     if path.exists():
         return path
-    for p in config.WORK_IMAGES.glob(f"*/{pid}.jpg"):  # already published
-        with Image.open(p) as img:
-            make_thumb(pid, img)
-        return path
+    published = list(config.WORK_IMAGES.glob(f"*/{pid}.jpg"))
+    if not published:  # an image adopted from a hand-written page keeps its own file name
+        if not _site_sources:
+            _site_sources.update({k: r["source"]["site"] for k, r in store.photos().items() if "site" in r["source"]})
+        if pid in _site_sources:
+            published = [config.REPO / _site_sources[pid].lstrip("/")]
+    for p in published:
+        if p.exists():
+            with Image.open(p) as img:
+                make_thumb(pid, img)
+            return path
     if not fetch([pid], log=lambda *_: None):
         return path
     return None

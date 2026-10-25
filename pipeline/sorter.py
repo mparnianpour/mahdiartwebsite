@@ -320,7 +320,17 @@ def propose(log=print):
                 if not best or n > best[1]:
                     links[root][w] = (y, n)
 
-    out = {"groups": [], "singles": [], "studio_views": sorted(hubs & set(new), key=lambda p: ts[p])}
+    # A new photo matching a published one this closely is the same photo
+    # (or the same moment), e.g. a stage that was added to the site by hand.
+    on_site = {}
+    for a, b, n, sim in edges:
+        for x, y in ((a, b), (b, a)):
+            if x in parent and y in anchors and n >= DUPLICATE and n > on_site.get(x, ("", 0))[1]:
+                on_site[x] = (y, n)
+
+    out = {"groups": [], "singles": [], "studio_views": sorted(hubs & set(new), key=lambda p: ts[p]),
+           "already_published": {x: {"photo": y, "work": photos[y]["work"], "matches": n}
+                                 for x, (y, n) in on_site.items()}}
     for root, members in groups.items():
         members.sort(key=lambda p: ts[p])
         if len(members) == 1 and members[0] in hubs:
@@ -362,6 +372,14 @@ def write_review(proposal, folder, log=print):
         sheet(anchors + g["photos"], folder / f"{name}.jpg", cols=6, cell=260,
               title=f"{name}: {g['first'][:10]} to {g['last'][:10]}",
               captions={a: f"existing: {photos[a]['work']}" for a in anchors})
+    already = proposal.get("already_published", {})
+    if already:
+        lines.append("## Already on the site")
+        lines.append("These match a published image almost exactly; usually skip them as "
+                     "\"already on the site as <work>\":")
+        for x, v in sorted(already.items(), key=lambda kv: kv[1]["work"]):
+            lines.append(f"- {x[:6]} = {v['photo'][:6]} in {v['work']} ({v['matches']} points)")
+        lines.append("")
     views = proposal.get("studio_views", [])
     for k in range(0, len(views), 30):
         chunk = views[k:k + 30]

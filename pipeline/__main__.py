@@ -109,6 +109,11 @@ def cmd_comments(a):
     print(json.dumps(new, indent=1, ensure_ascii=False) if new else "no new comments")
 
 
+def cmd_adopt(a):
+    added = publish.adopt()
+    print(f"{len(added)} images from hand-written work pages recorded" if added else "nothing new to record")
+
+
 def cmd_info(a):
     print(sorter.info(sorter.resolve(a.ids)))
 
@@ -157,6 +162,8 @@ def main(argv=None):
     s.add_argument("--reject", nargs="*")
     s.add_argument("--reply", nargs="*", help="key=text replies shown under approved comments")
     s.set_defaults(fn=cmd_comments)
+    sub.add_parser("adopt", help="record the images of hand-written work pages, so later photos of "
+                   "those works are recognised").set_defaults(fn=cmd_adopt)
     s = sub.add_parser("info", help="the archive record of each given photo")
     s.add_argument("ids", nargs="+")
     s.set_defaults(fn=cmd_info)

@@ -54,13 +54,16 @@ always his.
 ## 3. Sorter
 
 ```
+python3 -m pipeline adopt             # record images of hand-written work pages (the live site's own works)
 python3 -m pipeline sync              # new Drive files -> archive/photos.json + embeddings
 python3 -m pipeline publish-pending   # only if VAULT_PASSWORD is set
 python3 -m pipeline propose           # groups + review sheets in ~/.cache/mahdiart-pipeline/review/
 ```
 
-`propose` compares every waiting photo with all photos already published, so
-a new stage of a painting from months ago is linked to it ("continues …").
+`propose` compares every waiting photo with all photos already published,
+including the works Mahdi put on the site by hand, so a new stage of a
+painting from months ago is linked to it ("continues …"), and a photo that is
+already on the site is listed under "Already on the site" (skip it).
 
 ## 4. Critique: review
 
@@ -125,8 +128,11 @@ genuine responses to the work or the site (`--approve <key>`; optional
 anything carrying personal details (`--reject <key>`). Note what visitors
 respond to.
 
-Review the site as a visitor would: build it (`bundle exec jekyll build` if
-Ruby is available) and look at the home page, Works, a few work pages and the
+Review the site as a visitor would. The live site is
+https://mparnianpour.github.io/mahdiartwebsite/, built by GitHub Pages from
+`main`; if this environment cannot reach it (the host must be allowed in the
+environment's network settings), build `main` locally instead
+(`bundle exec jekyll build` if Ruby is available). Look at the home page, Works, a few work pages and the
 sketchbook at desktop and phone widths (Playwright screenshots). Note what
 reads badly: unclear stage notes, uncropped heroes, a featured work that
 should change, sections that are getting too long. As the archive grows, the
@@ -195,8 +201,9 @@ Publish:
   session's branch.
 - Open a pull request into `main` titled `Archive batch <date>` with the
   batch log as its description, and merge it (squash). GitHub Pages builds
-  `main`. If the Pages build fails afterwards, the previous version stays
-  live; fix it in the next commit.
+  `main`: check that the "pages build and deployment" workflow run for the
+  merge commit succeeded (GitHub Actions). If it failed, the previous version
+  stays live; fix it in the next commit.
 
 ## 6. What must never happen
 
