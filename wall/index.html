@@ -1,0 +1,109 @@
+---
+layout: default
+title: View on your wall
+body_class: page-wall
+sitemap: false
+---
+{% assign works = site.works | sort: "date" | reverse %}
+<article class="wrap wall" data-wall data-frame="{{ '/assets/frames/carved/' | relative_url }}">
+  <header class="wall__head">
+    <p class="eyebrow"><a href="{{ '/works/' | relative_url }}" data-wall-back>Works</a></p>
+    <h1 class="wall__title" data-wall-title>View on your wall</h1>
+    <p class="wall__line" data-wall-line></p>
+  </header>
+
+  <model-viewer class="wall__viewer" data-wall-viewer hidden
+    ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="fixed"
+    camera-controls touch-action="pan-y" interaction-prompt="none"
+    camera-orbit="0deg 90deg auto" min-camera-orbit="-70deg 20deg auto" max-camera-orbit="70deg 160deg auto"
+    environment-image="neutral" shadow-intensity="0.6">
+    <button slot="ar-button" class="wall__ar" type="button">See it on your wall</button>
+    <span slot="progress-bar"></span>
+  </model-viewer>
+
+  <div class="wall__notes">
+    <p class="wall__status" data-wall-status role="status">Building the frame…</p>
+    <p data-wall-ar hidden>
+      Tap <strong>See it on your wall</strong>, then point your phone at the wall
+      where you would hang it and move it slowly until the painting appears.
+      A wall with a switch, a picture or some texture is easier for the phone
+      to find than a plain white one.
+    </p>
+    <p data-wall-noar hidden>
+      To see it on your own wall, open this page on your phone: Safari on an
+      iPhone, or Chrome on an Android phone that supports AR.
+      Here you can turn it to look at the frame.
+    </p>
+    <noscript><p>This page needs JavaScript.</p></noscript>
+  </div>
+
+  <nav class="wall__others" data-wall-others hidden aria-label="Choose a painting">
+    <p>Choose a painting:</p>
+    <ul>
+      {% for w in works %}<li><a href="?work={{ w.slug }}">{{ w.title }}</a></li>{% endfor %}
+    </ul>
+  </nav>
+</article>
+
+<script id="works-data" type="application/json">{
+{%- for w in works %}
+  {{ w.slug | jsonify }}: {"title": {{ w.title | jsonify }}, "year": {{ w.year | jsonify }}, "size": {{ w.size | jsonify }}, "image": {{ w.image | relative_url | jsonify }}, "url": {{ w.url | relative_url | jsonify }}}{% unless forloop.last %},{% endunless %}
+{%- endfor %}
+}</script>
+<script type="module" src="{{ '/assets/lib/model-viewer/model-viewer.min.js' | relative_url }}"></script>
+<script type="module">
+  import { buildFramedPainting } from "{{ '/assets/js/wall.js' | relative_url }}";
+
+  const root = document.querySelector("[data-wall]");
+  const viewer = root.querySelector("[data-wall-viewer]");
+  const status = root.querySelector("[data-wall-status]");
+  const works = JSON.parse(document.getElementById("works-data").textContent);
+  const slug = new URLSearchParams(location.search).get("work");
+  const work = Object.hasOwn(works, slug ?? "") ? works[slug] : null;
+
+  if (!work) {
+    status.textContent = "This painting could not be found.";
+    root.querySelector("[data-wall-others]").hidden = false;
+  } else {
+    show(work).catch((err) => {
+      console.error(err);
+      status.textContent = "Sorry, the frame could not be built on this device.";
+    });
+  }
+
+  async function show(work) {
+    const title = work.title + (work.year ? ", " + work.year : "");
+    document.title = "View on your wall: " + title + " | " + document.title.split(" | ").pop();
+    root.querySelector("[data-wall-title]").textContent = work.title;
+    const back = root.querySelector("[data-wall-back]");
+    back.href = work.url;
+    back.textContent = "← Back to the painting";
+
+    const { blob, painting } = await buildFramedPainting({
+      frameUrl: root.dataset.frame, imageUrl: work.image, size: work.size,
+    });
+    const cm = (m) => Math.round(m * 100);
+    root.querySelector("[data-wall-line]").textContent = painting.known
+      ? "Shown at its real size, " + work.size + ", in a carved wood frame."
+      : "Its size isn't recorded, so it is shown about " + cm(Math.max(painting.w, painting.h)) +
+        " cm on its longest side, in a carved wood frame. You can pinch to resize it on the wall.";
+    if (!painting.known) viewer.setAttribute("ar-scale", "auto");
+    viewer.setAttribute("alt", title + ", in a carved wood frame");
+
+    viewer.addEventListener("load", async () => {
+      status.hidden = true;
+      await customElements.whenDefined("model-viewer");
+      const ar = viewer.canActivateAR;
+      root.querySelector("[data-wall-ar]").hidden = !ar;
+      root.querySelector("[data-wall-noar]").hidden = ar;
+    }, { once: true });
+    viewer.addEventListener("ar-status", (event) => {
+      if (event.detail.status === "failed") {
+        status.hidden = false;
+        status.textContent = "The camera view could not start on this phone.";
+      }
+    });
+    viewer.setAttribute("src", URL.createObjectURL(blob));
+    viewer.hidden = false;
+  }
+</script>

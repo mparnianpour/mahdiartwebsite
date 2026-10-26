@@ -94,7 +94,29 @@ Each entry also fills in a square on the studio calendar on the home page.
   have them. Otherwise download your posts via Instagram
   **Settings → Accounts Center → Your information and permissions → Download your information**.
 
-## 6. Your own domain (optional)
+## 6. View on your wall (AR)
+
+Every painting page has a **View on your wall, framed** link. It shows the
+painting in a carved wood frame, in 3D, at its real size. On a phone,
+**See it on your wall** puts it on a wall through the camera (Chrome on
+Android phones that support AR, Safari on iPhone).
+
+- The size comes from `size` on the painting's page, e.g. `230 × 130 cm`.
+  The photo decides the proportions and which way up it hangs; the longest
+  side matches the size you wrote. Without a `size` it is shown 1 m on its
+  longest side, and visitors can pinch to resize it.
+- The frame fits itself to each painting: the corners and the ornament in the
+  middle of each side keep their shape, and only the parts between them
+  stretch. Upright paintings get the frame turned on its side.
+- The frame is in `assets/frames/carved/`. To use a different frame, start
+  from a straight-on picture of the empty frame on a white background, with a
+  white opening, and run (needs `pip install pillow numpy shapely`):
+
+  ```
+  python3 tools/make_frame.py frame-picture.jpg assets/frames/carved
+  ```
+
+## 7. Your own domain (optional)
 
 If you buy a domain such as `mahdiparnianpour.com`, add it under
 **Settings → Pages → Custom domain**, then in `_config.yml` set
