@@ -1,32 +1,38 @@
 #!/usr/bin/env python3
-"""Turn a picture of an empty frame into the frame used by "View on your wall".
+"""Turn a picture of an empty frame into a frame for "View on your wall".
 
-    python3 tools/make_frame.py frame-photo.jpg assets/frames/carved
+    python3 tools/make_frame.py frame-picture.jpg assets/frames/<name>
 
-The picture must show the frame straight on, on a white background, with a
-white opening (a product rendering like the one from the frame maker).
-Only the wood is kept: the white around it and inside it is cut away.
+Any frame works: rectangular, oval, round or arched, carved or plain. The
+picture should show the frame straight on, with its opening empty, on a
+plain background of any colour (or a PNG with a transparent background).
 
-Writes two files into the output folder:
-  frame.jpg    the wood, cropped to the frame; the cut-away parts are filled
-               with nearby wood colour so no white shows at the edges
-  frame.json   the outline of the wood as triangles, the opening, and the
-               parts of the frame that may stretch
+How the frame is found
+  * The background colour is read from the edges of the picture (or from the
+    transparent pixels of a PNG). Everything that stands out from it, and is
+    not joined to the edges, is the frame: that gives its outside contour.
+  * The opening is the empty area around the centre of the frame. It may be
+    the same colour as the background, or one plain colour of its own, such
+    as a grey placeholder.
+  * Background showing through gaps in the carving is cut away as well.
 
-The AR page builds a 3D frame from these for each painting. To fit a
-painting that is wider, narrower or upright, the corners and the ornament in
-the middle of each side keep their shape, and only the stretches between
-them get longer or shorter. Portrait paintings get the frame turned on its
-side.
+Writes into the output folder:
+  frame.jpg    the frame, cropped; the cut-away parts are filled with nearby
+               frame colour so nothing pale shows at the edges
+  frame.json   the frame's outline as triangles, its opening, and the area
+               behind the opening where the painting goes
+
+The wall page keeps the frame's own shape. It puts the painting behind the
+opening at its real size, centred on the centre of the opening, and scales
+the frame so the painting fills the opening. If the painting is a different
+shape from the opening, the opening shows its middle and the frame hides the
+rest. Upright paintings get the frame turned on its side, unless --no-turn.
 
 Options
-  --stretch-x 0.075-0.415,0.585-0.925
-      the stretches along the top and bottom, as fractions of the opening's
-      width; everything outside them keeps its shape
-  --stretch-y 0.085-0.355,0.645-0.915
-      the same along the left and right sides, as fractions of its height
-  --threshold 205
-      a pixel counts as wood when its darkest colour channel is below this
+  --no-turn       never turn the frame on its side (for frames with a definite
+                  top, such as a crest or an arch)
+  --threshold N   how different from the background (0-255) a pixel must be to
+                  count as frame; worked out from the picture when left out
 
 Requires Pillow, numpy and shapely 2.1 or newer (pip install pillow numpy shapely).
 """
@@ -36,30 +42,46 @@ import os
 
 import numpy as np
 import shapely
-from PIL import Image
-from shapely.geometry import LinearRing, Polygon, box
+from PIL import Image, ImageDraw, ImageOps
+from shapely.affinity import translate
+from shapely.geometry import Point, Polygon, box
 from shapely.geometry.polygon import orient
 
-MARGIN = 8           # px of filled colour kept around the wood in the texture
+MARGIN = 8           # px of filled colour kept around the frame in the texture
 SIMPLIFY = 0.7       # px; removes the pixel staircase from the outline
 MIN_PIECE = 200      # px²; smaller separate specks are dropped
-MIN_GAP = 40         # px²; smaller white spots inside the wood are filled in
+MIN_GAP = 0.0005     # share of the frame's area; smaller see-through spots are kept as frame
+MIN_OPENING = 0.03   # the opening must be at least this share of the frame's area
 
 
-def wood_mask(img, threshold):
-    """Wood pixels, minus the pale one-pixel fringe where the wood meets white."""
-    rgb = np.asarray(img.convert("RGB")).astype(np.int16)
-    m = rgb.min(axis=2) < threshold
-    inner = m.copy()
-    inner[1:] &= m[:-1]
-    inner[:-1] &= m[1:]
-    inner[:, 1:] &= m[:, :-1]
-    inner[:, :-1] &= m[:, 1:]
-    return inner
+def erode(m):
+    """Shrink a mask by one pixel (drops the soft fringe along its edges)."""
+    out = m.copy()
+    out[1:] &= m[:-1]
+    out[:-1] &= m[1:]
+    out[:, 1:] &= m[:, :-1]
+    out[:, :-1] &= m[:, 1:]
+    return out
+
+
+def edge_pixels(a, width=4):
+    return np.concatenate([a[:width].reshape(-1, *a.shape[2:]), a[-width:].reshape(-1, *a.shape[2:]),
+                           a[:, :width].reshape(-1, *a.shape[2:]), a[:, -width:].reshape(-1, *a.shape[2:])])
+
+
+def otsu(values):
+    """The threshold that best splits values (0-255) into two groups."""
+    hist = np.bincount(np.clip(values, 0, 255).astype(np.int64).ravel(), minlength=256).astype(np.float64)
+    p = hist / hist.sum()
+    omega = np.cumsum(p)
+    mu = np.cumsum(p * np.arange(256))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        between = (mu[-1] * omega - mu) ** 2 / (omega * (1 - omega))
+    return int(np.nanargmax(between)) + 1
 
 
 def mask_to_polygon(mask):
-    """Union of the horizontal runs of wood pixels, one row at a time."""
+    """Union of the horizontal runs of a mask, one row at a time."""
     boxes = []
     padded = np.zeros((mask.shape[0], mask.shape[1] + 2), dtype=np.int8)
     padded[:, 1:-1] = mask
@@ -71,41 +93,106 @@ def mask_to_polygon(mask):
     return shapely.unary_union(boxes)
 
 
-def clean(geom, center):
-    """Keep the frame: drop specks, fill small spots, keep the opening."""
-    parts = [g for g in getattr(geom, "geoms", [geom]) if g.area >= MIN_PIECE]
-    frame = max(parts, key=lambda g: g.area)
-    if len(parts) > 1:
-        print(f"note: {len(parts) - 1} loose piece(s) outside the main frame kept")
-    out = []
-    for part in parts:
-        holes = [r for r in part.interiors
-                 if Polygon(r).area >= MIN_GAP or Polygon(r).contains(center)]
-        out.append(Polygon(part.exterior, holes))
-    opening = [h for h in frame.interiors if Polygon(h).contains(center)]
-    if not opening:
-        raise SystemExit("could not find the white opening in the middle of the frame")
-    return out, Polygon(opening[0])
+def inside(poly, shape):
+    """Boolean mask of the pixels inside a polygon."""
+    return rasterize(poly, (shape[1], shape[0]))
 
 
-def insert_crossings(coords, xs, ys):
-    """Add a point wherever an outline edge crosses a stretch line, so that each
-    triangle stays on one side of every line and stretches without bending."""
-    out = []
-    for (x0, y0), (x1, y1) in zip(coords[:-1], coords[1:]):
-        out.append((x0, y0))
-        cuts = []
-        for s in xs:
-            if (x0 - s) * (x1 - s) < 0:
-                t = (s - x0) / (x1 - x0)
-                cuts.append((t, (s, y0 + t * (y1 - y0))))
-        for s in ys:
-            if (y0 - s) * (y1 - s) < 0:
-                t = (s - y0) / (y1 - y0)
-                cuts.append((t, (x0 + t * (x1 - x0), s)))
-        out.extend(p for _, p in sorted(cuts))
-    out.append(out[0])
-    return out
+def parts(geom):
+    return [g for g in getattr(geom, "geoms", [geom]) if g.geom_type == "Polygon" and not g.is_empty]
+
+
+def rasterize(poly, size):
+    """Polygon (without its holes) -> boolean mask."""
+    img = Image.new("1", size, 0)
+    draw = ImageDraw.Draw(img)
+    for p in parts(poly):
+        draw.polygon(list(p.exterior.coords), fill=1)
+    return np.asarray(img, dtype=bool)
+
+
+def find_frame(rgb, alpha, threshold):
+    """Return (frame pieces, opening polygon, solid pixel mask) for the whole picture."""
+    h, w = alpha.shape
+    clear_edges = (edge_pixels(alpha) < 128).mean()
+    if clear_edges > 0.5:
+        print("background: transparent")
+        diff = alpha
+        threshold = threshold or 128
+    else:
+        bg = np.median(edge_pixels(rgb), axis=0)
+        diff = np.abs(rgb - bg).max(axis=2)
+        if (edge_pixels(diff) < 32).mean() < 0.6:
+            print("warning: the edges of the picture are not one plain colour; "
+                  "crop it so the frame sits on an even background")
+        # Half of the split between background and frame: low enough that pale
+        # highlights still count as frame; the soft edge is shaved off below.
+        threshold = threshold or min(128, max(16, otsu(diff) // 2))
+        print(f"background: rgb{tuple(int(c) for c in bg)}, threshold {threshold}")
+
+    solid = erode(diff >= threshold)
+    clear = mask_to_polygon(~solid)
+    picture = box(0, 0, w, h)
+    outside = [p for p in parts(clear) if p.exterior.intersects(picture.exterior)]
+    enclosed = [p for p in parts(clear) if not p.exterior.intersects(picture.exterior)]
+    pieces = [p for p in parts(picture.difference(shapely.unary_union(outside))) if p.area >= MIN_PIECE]
+    if not pieces:
+        raise SystemExit("could not find a frame: nothing stands out from the background")
+    main = max(pieces, key=lambda p: p.area)
+    if len(pieces) > 1:
+        print(f"note: {len(pieces) - 1} loose piece(s) next to the frame kept")
+
+    # The opening: the empty area around the centre of the frame.
+    x0, y0, x1, y1 = main.bounds
+    centre = Point((x0 + x1) / 2, (y0 + y1) / 2)
+    around = [p for p in enclosed if p.contains(centre)]
+    if around:
+        opening = Polygon(around[0].exterior)
+    else:
+        # Not background: look for one plain colour of its own around the centre.
+        cx, cy = int(centre.x), int(centre.y)
+        seed = np.median(rgb[cy - 3:cy + 4, cx - 3:cx + 4].reshape(-1, 3), axis=0)
+        bx0, by0, bx1, by1 = (int(v) for v in main.bounds)
+        near = np.abs(rgb[by0:by1, bx0:bx1] - seed).max(axis=2)
+        same = ~erode(near >= min(128, max(16, otsu(near) // 2)))
+        found = [p for p in parts(translate(mask_to_polygon(same), bx0, by0)) if p.contains(centre)]
+        if not found or found[0].exterior.intersects(main.exterior):
+            raise SystemExit("could not find the opening around the centre of the frame; "
+                             "use a picture with the opening empty")
+        opening = Polygon(found[0].exterior)
+    if opening.area < MIN_OPENING * main.area:
+        raise SystemExit("the empty area around the centre is too small to be the opening; "
+                         "use a picture with the opening empty")
+
+    # Gaps in the carving: clearly background, not just a pale or dark patch of frame.
+    gaps = [p for p in enclosed if p.area >= MIN_GAP * main.area and not opening.contains(p)
+            and np.median(diff[inside(p, alpha.shape)]) <= threshold / 3]
+    holes = shapely.unary_union([opening, *gaps])
+    frame = [p for g in pieces for p in parts(g.difference(holes)) if p.area >= MIN_PIECE]
+    print(f"opening: {opening.bounds[2] - opening.bounds[0]:.0f}x{opening.bounds[3] - opening.bounds[1]:.0f} px"
+          f"{', ' + str(len(gaps)) + ' gap(s) in the carving' if gaps else ''}")
+    return frame, opening, solid
+
+
+def triangulate(polys):
+    """Constrained triangulation; returns (flat xy list, triangle indices, outlines)."""
+    index, vertices, triangles, rings = {}, [], [], []
+
+    def vid(x, y):
+        key = (round(x * 1000), round(y * 1000))
+        if key not in index:
+            index[key] = len(vertices) // 2
+            vertices.extend((round(x, 3), round(y, 3)))
+        return index[key]
+
+    for poly in polys:
+        for tri in shapely.constrained_delaunay_triangles(poly).geoms:
+            a, b, c = tri.exterior.coords[:3]
+            if abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) > 1e-9:
+                triangles.extend((vid(*a), vid(*b), vid(*c)))
+        for ring in [poly.exterior, *poly.interiors]:
+            rings.append([vid(x, y) for x, y in ring.coords[:-1]])
+    return vertices, triangles, rings
 
 
 def blur(a, r):
@@ -122,8 +209,8 @@ def blur(a, r):
 
 
 def fill_outside(img, mask):
-    """Paint the cut-away pixels with the colour of the nearest wood, so the
-    texture has no white fringe when the phone shrinks it."""
+    """Paint the cut-away pixels with the colour of the nearest frame pixels, so
+    the texture has no pale fringe when the phone shrinks it."""
     rgb = np.asarray(img.convert("RGB")).astype(np.float32)
     m = mask.astype(np.float32)
     out = rgb.copy()
@@ -138,106 +225,58 @@ def fill_outside(img, mask):
     return Image.fromarray(np.clip(out + 0.5, 0, 255).astype(np.uint8))
 
 
-def parse_ranges(text):
-    return [tuple(float(v) for v in part.split("-")) for part in text.split(",")]
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("image")
     ap.add_argument("outdir")
-    ap.add_argument("--stretch-x", default="0.075-0.415,0.585-0.925")
-    ap.add_argument("--stretch-y", default="0.085-0.355,0.645-0.915")
-    ap.add_argument("--threshold", type=int, default=205)
+    ap.add_argument("--no-turn", action="store_true")
+    ap.add_argument("--threshold", type=int)
     ap.add_argument("--quality", type=int, default=88)
     args = ap.parse_args()
 
-    src = Image.open(args.image).convert("RGB")
-    full_mask = wood_mask(src, args.threshold)
-    ys, xs = np.nonzero(full_mask)
-    x0 = max(0, xs.min() - MARGIN)
-    y0 = max(0, ys.min() - MARGIN)
-    x1 = min(src.width, xs.max() + 1 + MARGIN)
-    y1 = min(src.height, ys.max() + 1 + MARGIN)
-    img = src.crop((x0, y0, x1, y1))
-    mask = full_mask[y0:y1, x0:x1]
-    w, h = img.size
+    src = ImageOps.exif_transpose(Image.open(args.image))
+    rgba = np.asarray(src.convert("RGBA")).astype(np.int16)
+    frame, opening, solid = find_frame(rgba[..., :3], rgba[..., 3], args.threshold)
 
-    pieces, opening = clean(mask_to_polygon(mask), shapely.Point(w / 2, h / 2))
+    # Crop to the frame.
+    fx0, fy0, fx1, fy1 = shapely.unary_union(frame).bounds
+    x0, y0 = max(0, int(fx0) - MARGIN), max(0, int(fy0) - MARGIN)
+    x1, y1 = min(src.width, int(np.ceil(fx1)) + MARGIN), min(src.height, int(np.ceil(fy1)) + MARGIN)
+    frame = [translate(p, -x0, -y0) for p in frame]
+    opening = translate(opening, -x0, -y0)
+    w, h = x1 - x0, y1 - y0
+
+    polys = [orient(p.simplify(SIMPLIFY, preserve_topology=True), sign=1.0) for p in frame]
+    vertices, triangles, rings = triangulate(polys)
+
+    # Where the painting goes: the opening plus a narrow lip hidden under the frame.
     ox0, oy0, ox1, oy1 = opening.bounds
-    ow, oh = ox1 - ox0, oy1 - oy0
+    lip = max(2.0, 0.012 * min(ox1 - ox0, oy1 - oy0))
+    behind = opening.buffer(lip, join_style="mitre").intersection(shapely.unary_union(
+        [Polygon(p.exterior) for p in frame]))
+    behind = [orient(p.simplify(SIMPLIFY), sign=1.0) for p in parts(behind) if p.area >= MIN_PIECE]
+    art_vertices, art_triangles, _ = triangulate(behind)
 
-    # Stretch lines sit on half pixels so they never run along an outline edge.
-    def lines(ranges, start, length):
-        return [[round(start + a * length) + 0.5, round(start + b * length) + 0.5] for a, b in ranges]
-    stretch_x = lines(parse_ranges(args.stretch_x), ox0, ow)
-    stretch_y = lines(parse_ranges(args.stretch_y), oy0, oh)
-    cut_x = sorted(v for r in stretch_x for v in r)
-    cut_y = sorted(v for r in stretch_y for v in r)
-
-    # Outline with the crossing points added, exterior counter-clockwise.
-    polys = []
-    for p in pieces:
-        p = orient(p.simplify(SIMPLIFY, preserve_topology=True), sign=1.0)
-        ext = insert_crossings(list(p.exterior.coords), cut_x, cut_y)
-        holes = [insert_crossings(list(r.coords), cut_x, cut_y) for r in p.interiors]
-        polys.append(Polygon(ext, holes))
-
-    # Triangulate each cell between the stretch lines on its own.
-    bx = [-1e9] + cut_x + [1e9]
-    by = [-1e9] + cut_y + [1e9]
-    index, vertices, triangles = {}, [], []
-
-    def vid(x, y):
-        key = (round(x * 1000), round(y * 1000))
-        if key not in index:
-            index[key] = len(vertices) // 2
-            vertices.extend((round(x, 3), round(y, 3)))
-        return index[key]
-
-    for poly in polys:
-        for i in range(len(bx) - 1):
-            for j in range(len(by) - 1):
-                piece = poly.intersection(box(bx[i], by[j], bx[i + 1], by[j + 1]))
-                if piece.is_empty:
-                    continue
-                for g in getattr(piece, "geoms", [piece]):
-                    if g.geom_type != "Polygon" or g.area < 1e-6:
-                        continue
-                    for tri in shapely.constrained_delaunay_triangles(g).geoms:
-                        a, b, c = tri.exterior.coords[:3]
-                        if abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) < 1e-9:
-                            continue
-                        triangles.extend((vid(*a), vid(*b), vid(*c)))
-
-    rings = []
-    for poly in polys:
-        for ring in [poly.exterior, *poly.interiors]:
-            ids = []
-            for x, y in ring.coords[:-1]:
-                key = (round(x * 1000), round(y * 1000))
-                if key not in index:
-                    raise SystemExit(f"outline point {x:.2f},{y:.2f} missing from the triangles")
-                ids.append(index[key])
-            rings.append(ids)
-
+    wood = solid[y0:y1, x0:x1] & ~rasterize(opening, (w, h))
     os.makedirs(args.outdir, exist_ok=True)
-    fill_outside(img, mask).save(os.path.join(args.outdir, "frame.jpg"),
-                                 quality=args.quality, optimize=True, progressive=True)
+    fill_outside(src.convert("RGB").crop((x0, y0, x1, y1)), wood).save(
+        os.path.join(args.outdir, "frame.jpg"), quality=args.quality, optimize=True, progressive=True)
     data = {
         "image": "frame.jpg",
         "width": w,
         "height": h,
-        "opening": [ox0, oy0, ox1, oy1],
-        "stretch": {"x": stretch_x, "y": stretch_y},
+        "opening": [round(v, 2) for v in (ox0, oy0, ox1, oy1)],
+        "rectangular": opening.area >= 0.97 * (ox1 - ox0) * (oy1 - oy0),
+        "turn": not args.no_turn,
         "vertices": vertices,
         "triangles": triangles,
         "rings": rings,
+        "art": {"vertices": art_vertices, "triangles": art_triangles},
     }
     with open(os.path.join(args.outdir, "frame.json"), "w") as f:
         json.dump(data, f, separators=(",", ":"))
-    print(f"{w}x{h} px, opening {ow:.0f}x{oh:.0f} px, "
-          f"{len(vertices) // 2} points, {len(triangles) // 3} triangles, {len(rings)} outlines")
+    print(f"{w}x{h} px, {len(vertices) // 2} points, {len(triangles) // 3} triangles, "
+          f"{len(rings)} outlines -> {args.outdir}")
 
 
 if __name__ == "__main__":

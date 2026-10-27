@@ -97,7 +97,7 @@ Each entry also fills in a square on the studio calendar on the home page.
 ## 6. View on your wall (AR)
 
 Every painting page has a **View on your wall, framed** link. It shows the
-painting in a carved wood frame, in 3D, at its real size. On a phone,
+painting in a frame, in 3D, at its real size. On a phone,
 **See it on your wall** puts it on a wall through the camera (Chrome on
 Android phones that support AR, Safari on iPhone).
 
@@ -105,16 +105,29 @@ Android phones that support AR, Safari on iPhone).
   The photo decides the proportions and which way up it hangs; the longest
   side matches the size you wrote. Without a `size` it is shown 1 m on its
   longest side, and visitors can pinch to resize it.
-- The frame fits itself to each painting: the corners and the ornament in the
-  middle of each side keep their shape, and only the parts between them
-  stretch. Upright paintings get the frame turned on its side.
-- The frame is in `assets/frames/carved/`. To use a different frame, start
-  from a straight-on picture of the empty frame on a white background, with a
-  white opening, and run (needs `pip install pillow numpy shapely`):
+- The frame keeps its own shape. The painting sits behind the opening,
+  centred on the centre of the opening, and the frame is scaled so the
+  painting fills it. If the painting is a different shape from the opening
+  (an oval frame, say), the opening shows the middle of the painting and the
+  frame covers the rest. A frame is turned on its side for an upright
+  painting when its opening is wide, and the other way round.
 
-  ```
-  python3 tools/make_frame.py frame-picture.jpg assets/frames/carved
-  ```
+**Adding a frame.** Any frame works: rectangular, oval, round or arched.
+Start from a straight-on picture of the empty frame on a plain background
+(any colour, or a transparent PNG). The opening can be empty or one plain
+colour. Then run (needs `pip install pillow numpy shapely`):
+
+```
+python3 tools/make_frame.py frame-picture.jpg assets/frames/gold-oval
+```
+
+It finds the frame's outline and its opening by itself and prints what it
+found. Add `--no-turn` for a frame with a definite top, such as an arch or a
+crest, so it is never turned on its side.
+
+- To try it: `/wall/?work=ships-fate&frame=gold-oval`
+- To use it for one painting, add `frame: gold-oval` to that painting's page.
+- To use it for every painting, set `frame: gold-oval` in `_config.yml`.
 
 ## 7. Your own domain (optional)
 

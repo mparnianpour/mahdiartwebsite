@@ -1,11 +1,15 @@
-/* View on your wall: builds a 3D model of a painting in the carved wood frame,
-   at the painting's real size, and hands it to <model-viewer>, which shows it
-   on a wall through the phone's camera (WebXR on Android, Quick Look on iPhone).
+/* View on your wall: builds a 3D model of a painting in a frame, at the
+   painting's real size, and hands it to <model-viewer>, which shows it on a
+   wall through the phone's camera (WebXR on Android, Quick Look on iPhone).
 
-   The frame comes from tools/make_frame.py: a cut-out picture of the wood
-   and its outline as triangles. Corners and the ornament in the middle of each
-   side keep their shape; only the stretches between them grow or shrink to fit
-   the painting. Upright paintings get the frame turned on its side. */
+   The frame comes from tools/make_frame.py: a cut-out picture of the frame,
+   its outline as triangles, its opening, and the area behind the opening.
+   The frame keeps its own shape. The painting sits behind the opening,
+   centred on the opening's centre, and the frame is scaled so the painting
+   fills it; if the shapes differ, the opening shows the middle of the
+   painting and the frame hides the rest. A frame whose opening is the other
+   way round from the painting is turned on its side (unless it says
+   "turn": false). */
 
 const DEFAULT_LONG_SIDE = 1.0;   // metres, when a work has no size
 
@@ -30,41 +34,26 @@ function paintingSize(size, imgW, imgH) {
     : { w: long * imgW / imgH, h: long, known: !!dims };
 }
 
-const sum = (ranges) => ranges.reduce((t, [a, b]) => t + b - a, 0);
-
-/* How far a point moves when the stretches along one side are scaled by k. */
-function stretched(v, ranges, k) {
-  let out = v;
-  for (const [a, b] of ranges) out += (k - 1) * Math.min(Math.max(v - a, 0), b - a);
-  return out;
-}
-
-/* Fit the frame's opening to a w × h opening (metres, frame lying landscape).
-   Stretches along the top grow by kx and along the sides by ky = 1 / kx, so
-   neither direction is distorted much more than the other. */
-function fitFrame(frame, w, h) {
+/* Scale and place the frame around a w × h painting (metres). */
+function fitFrame(frame, art) {
   const [ox0, oy0, ox1, oy1] = frame.opening;
   const ow = ox1 - ox0, oh = oy1 - oy0;
-  const lx = sum(frame.stretch.x), ly = sum(frame.stretch.y);
-  const ratio = w / h;
-  const gap = (k) => (ow + (k - 1) * lx) - ratio * (oh + (1 / k - 1) * ly);
-  let lo = 0.05, hi = 20;
-  for (let i = 0; i < 60; i++) {
-    const mid = Math.sqrt(lo * hi);
-    if (gap(mid) < 0) lo = mid; else hi = mid;
-  }
-  const kx = Math.sqrt(lo * hi), ky = 1 / kx;
-  const scale = w / (ow + (kx - 1) * lx);   // metres per pixel of the frame picture
-  const cx = (stretched(ox0, frame.stretch.x, kx) + stretched(ox1, frame.stretch.x, kx)) / 2;
-  const cy = (stretched(oy0, frame.stretch.y, ky) + stretched(oy1, frame.stretch.y, ky)) / 2;
-  const band = (ox0 + oy0 + (frame.width - ox1) + (frame.height - oy1)) / 4 * scale;
+  const turn = frame.turn !== false && (art.h > art.w) !== (oh > ow);
+  const [across, down] = turn ? [oh, ow] : [ow, oh];
+  // The painting covers the opening, with a narrow edge hidden under the frame.
+  const lip = Math.min(0.008, 0.01 * Math.min(art.w, art.h));
+  const scale = Math.min((art.w - 2 * lip) / across, (art.h - 2 * lip) / down);   // metres per pixel
+  const cx = (ox0 + ox1) / 2, cy = (oy0 + oy1) / 2;
   return {
-    band,
+    band: (ox0 + oy0 + (frame.width - ox1) + (frame.height - oy1)) / 4 * scale,
+    // The opening hides part of the painting: it is another shape, or it isn't
+    // a rectangle (the painting's corners go behind the frame).
+    cropped: frame.rectangular === false || scale * Math.min(across / art.w, down / art.h) < 0.97,
     // Pixel in the frame picture -> metres, centred on the opening, y up.
-    map: (x, y) => [
-      scale * (stretched(x, frame.stretch.x, kx) - cx),
-      -scale * (stretched(y, frame.stretch.y, ky) - cy),
-    ],
+    place: (x, y) => {
+      const X = scale * (x - cx), Y = -scale * (y - cy);
+      return turn ? [-Y, X] : [X, Y];
+    },
   };
 }
 
@@ -96,38 +85,31 @@ function quad(p, corners, n, uvs) {
   triangle(p, ids[0], ids[2], ids[3], n);
 }
 
+/* A triangulated outline as one flat face at depth z, facing n. */
+function faces(p, pts, tris, z, n, uv) {
+  const ids = pts.map((q, i) => vertex(p, q[0], q[1], z, n, ...uv(q, i)));
+  for (let i = 0; i < tris.length; i += 3) triangle(p, ids[tris[i]], ids[tris[i + 1]], ids[tris[i + 2]], n);
+}
+
 const FRONT = [0, 0, 1], BACK = [0, 0, -1];
 
 function buildScene(frame, art) {
-  // The frame is drawn landscape; an upright painting turns it on its side.
-  const upright = art.h > art.w;
-  const lip = Math.min(0.008, 0.01 * Math.min(art.w, art.h));   // canvas edge hidden under the frame
-  const fit = upright
-    ? fitFrame(frame, art.h - 2 * lip, art.w - 2 * lip)
-    : fitFrame(frame, art.w - 2 * lip, art.h - 2 * lip);
-  const place = upright
-    ? (x, y) => { const [X, Y] = fit.map(x, y); return [-Y, X]; }
-    : fit.map;
+  const fit = fitFrame(frame, art);
   const depth = Math.min(0.09, Math.max(0.025, 0.3 * fit.band));
   const canvasZ = 0.4 * depth;
 
   const wood = primitive(), back = primitive(), canvas = primitive();
   const v = frame.vertices, W = frame.width, H = frame.height;
   const pts = [];
-  for (let i = 0; i < v.length; i += 2) pts.push(place(v[i], v[i + 1]));
+  for (let i = 0; i < v.length; i += 2) pts.push(fit.place(v[i], v[i + 1]));
 
   // Front and back of the frame.
-  const front = pts.map((p, i) => vertex(wood, p[0], p[1], depth, FRONT, v[2 * i] / W, v[2 * i + 1] / H));
-  const rear = pts.map((p) => vertex(back, p[0], p[1], 0, BACK, 0, 0));
-  const t = frame.triangles;
-  for (let i = 0; i < t.length; i += 3) {
-    triangle(wood, front[t[i]], front[t[i + 1]], front[t[i + 2]], FRONT);
-    triangle(back, rear[t[i]], rear[t[i + 1]], rear[t[i + 2]], BACK);
-  }
+  faces(wood, pts, frame.triangles, depth, FRONT, (q, i) => [v[2 * i] / W, v[2 * i + 1] / H]);
+  faces(back, pts, frame.triangles, 0, BACK, () => [0, 0]);
 
-  // Sides of the frame, along every outline, coloured by the wood at the edge.
-  // The tool winds every outline the same way round the wood, so the outside
-  // edge (the largest outline) tells which side of each edge the wood is on.
+  // Sides of the frame, along every outline, coloured by the frame at the edge.
+  // The tool winds every outline the same way round the frame, so the outside
+  // edge (the largest outline) tells which side of each edge the frame is on.
   const areas = frame.rings.map((ring) => ring.reduce((sum, id, i) => {
     const a = pts[id], b = pts[ring[(i + 1) % ring.length]];
     return sum + a[0] * b[1] - b[0] * a[1];
@@ -146,14 +128,14 @@ function buildScene(frame, art) {
     }
   }
 
-  // The painting, set back inside the frame, and a backing board behind it.
-  const hw = art.w / 2, hh = art.h / 2;
-  quad(canvas, [[-hw, hh, canvasZ], [hw, hh, canvasZ], [hw, -hh, canvasZ], [-hw, -hh, canvasZ]], FRONT,
-    [[0, 0], [1, 0], [1, 1], [0, 1]]);
-  quad(back, [[-hw, hh, 0.002], [hw, hh, 0.002], [hw, -hh, 0.002], [-hw, -hh, 0.002]], BACK,
-    [[0, 0], [0, 0], [0, 0], [0, 0]]);
+  // The painting, set back behind the opening and cut to its shape, centred on
+  // the opening's centre; and a backing board of the same shape behind it.
+  const av = frame.art.vertices, artPts = [];
+  for (let i = 0; i < av.length; i += 2) artPts.push(fit.place(av[i], av[i + 1]));
+  faces(canvas, artPts, frame.art.triangles, canvasZ, FRONT, (q) => [q[0] / art.w + 0.5, 0.5 - q[1] / art.h]);
+  faces(back, artPts, frame.art.triangles, 0.002, BACK, () => [0, 0]);
 
-  return { wood, back, canvas, depth };
+  return { wood, back, canvas, depth, cropped: fit.cropped };
 }
 
 /* glTF binary --------------------------------------------------------------- */
@@ -275,7 +257,7 @@ export async function buildFramedPainting({ frameUrl, imageUrl, size }) {
   const scene = buildScene(frame, art);
 
   const glb = new GLB();
-  const woodMat = glb.material("Carved wood", {
+  const woodMat = glb.material("Frame", {
     baseColorTexture: { index: glb.texture(woodImg.bytes, woodImg.mime) }, roughnessFactor: 0.7,
   });
   const backMat = glb.material("Back of the frame", {
@@ -287,5 +269,5 @@ export async function buildFramedPainting({ frameUrl, imageUrl, size }) {
   glb.primitive(scene.wood, woodMat);
   glb.primitive(scene.back, backMat);
   glb.primitive(scene.canvas, canvasMat);
-  return { blob: glb.toBlob(), painting: art, depth: scene.depth };
+  return { blob: glb.toBlob(), painting: art, depth: scene.depth, cropped: scene.cropped };
 }

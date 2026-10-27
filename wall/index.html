@@ -5,7 +5,7 @@ body_class: page-wall
 sitemap: false
 ---
 {% assign works = site.works | sort: "date" | reverse %}
-<article class="wrap wall" data-wall data-frame="{{ '/assets/frames/carved/' | relative_url }}">
+<article class="wrap wall" data-wall data-frames="{{ '/assets/frames/' | relative_url }}">
   <header class="wall__head">
     <p class="eyebrow"><a href="{{ '/works/' | relative_url }}" data-wall-back>Works</a></p>
     <h1 class="wall__title" data-wall-title>View on your wall</h1>
@@ -47,7 +47,7 @@ sitemap: false
 
 <script id="works-data" type="application/json">{
 {%- for w in works %}
-  {{ w.slug | jsonify }}: {"title": {{ w.title | jsonify }}, "year": {{ w.year | jsonify }}, "size": {{ w.size | jsonify }}, "image": {{ w.image | relative_url | jsonify }}, "url": {{ w.url | relative_url | jsonify }}}{% unless forloop.last %},{% endunless %}
+  {{ w.slug | jsonify }}: {"title": {{ w.title | jsonify }}, "year": {{ w.year | jsonify }}, "size": {{ w.size | jsonify }}, "image": {{ w.image | relative_url | jsonify }}, "url": {{ w.url | relative_url | jsonify }}, "frame": {{ w.frame | default: site.frame | jsonify }}}{% unless forloop.last %},{% endunless %}
 {%- endfor %}
 }</script>
 <script type="module" src="{{ '/assets/lib/model-viewer/model-viewer.min.js' | relative_url }}"></script>
@@ -79,16 +79,21 @@ sitemap: false
     back.href = work.url;
     back.textContent = "← Back to the painting";
 
-    const { blob, painting } = await buildFramedPainting({
-      frameUrl: root.dataset.frame, imageUrl: work.image, size: work.size,
+    // ?frame=<folder> previews another frame from assets/frames/.
+    const asked = new URLSearchParams(location.search).get("frame");
+    const frame = /^[a-z0-9_-]+$/i.test(asked || "") ? asked : work.frame;
+    const { blob, painting, cropped } = await buildFramedPainting({
+      frameUrl: root.dataset.frames + frame + "/", imageUrl: work.image, size: work.size,
     });
     const cm = (m) => Math.round(m * 100);
-    root.querySelector("[data-wall-line]").textContent = painting.known
-      ? "Shown at its real size, " + work.size + ", in a carved wood frame."
-      : "Its size isn't recorded, so it is shown about " + cm(Math.max(painting.w, painting.h)) +
-        " cm on its longest side, in a carved wood frame. You can pinch to resize it on the wall.";
+    let line = painting.known
+      ? "Shown framed, at its real size, " + work.size + "."
+      : "Its size isn't recorded, so it is shown framed, about " + cm(Math.max(painting.w, painting.h)) +
+        " cm on its longest side. You can pinch to resize it on the wall.";
+    if (cropped) line += " The frame's opening is a different shape, so it shows the middle of the painting.";
+    root.querySelector("[data-wall-line]").textContent = line;
     if (!painting.known) viewer.setAttribute("ar-scale", "auto");
-    viewer.setAttribute("alt", title + ", in a carved wood frame");
+    viewer.setAttribute("alt", title + ", framed");
 
     viewer.addEventListener("load", async () => {
       status.hidden = true;

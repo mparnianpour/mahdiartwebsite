@@ -19,6 +19,10 @@ intro:
 instagram: mahdi.parnianpour
 email: ""
 
+# Frame for "View on your wall": a folder in assets/frames/ made with
+# tools/make_frame.py. A painting can choose another with  frame: <folder>
+frame: carved
+
 # Optional portrait for the About page, e.g. /assets/img/portrait.jpg
 portrait: /assets/img/works/ships-fate/stage-1.jpg
 
