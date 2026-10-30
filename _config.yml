@@ -19,6 +19,10 @@ intro:
 instagram: mahdi.parnianpour
 email: ""
 
+# Frame for "View on your wall": a folder in assets/frames/ made with
+# tools/make_frame.py. A painting can choose another with  frame: <folder>
+frame: carved
+
 # Visitor comments go through a Google Form (see README, "Visitor comments").
 # Leave form empty to hide the Comments page.
 comments:

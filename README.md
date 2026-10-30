@@ -138,7 +138,42 @@ site after a batch has read them.
    and send that link to Claude. It contains the ids that go into
    `_config.yml` under `comments:`.
 
-## 7. Your own domain (optional)
+## 7. View on your wall (AR)
+
+Every painting page has a **View on your wall, framed** link. It shows the
+painting in a frame, in 3D, at its real size. On a phone,
+**See it on your wall** puts it on a wall through the camera (Chrome on
+Android phones that support AR, Safari on iPhone).
+
+- The size comes from `size` on the painting's page, e.g. `230 × 130 cm`.
+  The photo decides the proportions and which way up it hangs; the longest
+  side matches the size you wrote. Without a `size` it is shown 1 m on its
+  longest side, and visitors can pinch to resize it.
+- The frame keeps its own shape. The painting sits behind the opening,
+  centred on the centre of the opening, and the frame is scaled so the
+  painting fills it. If the painting is a different shape from the opening
+  (an oval frame, say), the opening shows the middle of the painting and the
+  frame covers the rest. A frame is turned on its side for an upright
+  painting when its opening is wide, and the other way round.
+
+**Adding a frame.** Any frame works: rectangular, oval, round or arched.
+Start from a straight-on picture of the empty frame on a plain background
+(any colour, or a transparent PNG). The opening can be empty or one plain
+colour. Then run (needs `pip install pillow numpy shapely`):
+
+```
+python3 tools/make_frame.py frame-picture.jpg assets/frames/gold-oval
+```
+
+It finds the frame's outline and its opening by itself and prints what it
+found. Add `--no-turn` for a frame with a definite top, such as an arch or a
+crest, so it is never turned on its side.
+
+- To try it: `/wall/?work=ships-fate&frame=gold-oval`
+- To use it for one painting, add `frame: gold-oval` to that painting's page.
+- To use it for every painting, set `frame: gold-oval` in `_config.yml`.
+
+## 8. Your own domain (optional)
 
 If you buy a domain such as `mahdiparnianpour.com`, add it under
 **Settings → Pages → Custom domain**, then in `_config.yml` set
