@@ -11,6 +11,7 @@ SETTINGS = json.loads((ARCHIVE / "settings.json").read_text())
 PHOTOS = ARCHIVE / "photos.json"      # every photo seen: when it was taken, where it came from, where it went
 SOURCES = ARCHIVE / "sources.json"    # Drive files already read (Takeout zips and loose photos)
 WORKS = ARCHIVE / "works.json"        # public paintings: stages in order, with notes
+DRAFTS = ARCHIVE / "drafts.json"      # works grouped in review but not yet published
 EMBEDDINGS = ARCHIVE / "embeddings"   # image embeddings, one file per batch
 BATCHES = ARCHIVE / "batches"         # log of each batch
 

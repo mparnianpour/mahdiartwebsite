@@ -172,28 +172,101 @@ def adopt(log=print):
 
 # --- applying decisions ---------------------------------------------------------
 
-def apply(path, log=print):
+def _expand(refs, photos):
+    """Photo ids from ids, id prefixes and review references.
+
+    "G045" is every waiting photo of proposed group 45; "S003#4" and "V001#2"
+    are the 4th photo on singles sheet S003 and the 2nd on studio-views sheet
+    V001, as numbered on the sheets written by `propose`.
+    """
+    import json
+    import re as _re
+
+    proposal = None
+    out = []
+    for ref in refs:
+        ref = str(ref)
+        m = _re.fullmatch(r"([GSV])(\d{3})(?:#(\d+))?", ref)
+        if not m:
+            out += sorter.resolve([ref], photos)
+            continue
+        if proposal is None:
+            proposal = json.loads((config.REVIEW / "proposals.json").read_text())
+        kind, n, i = m.group(1), int(m.group(2)), m.group(3)
+        if kind == "G":
+            members = [p for p in proposal["groups"][n - 1]["photos"] if photos[p]["status"] in ("new", "held")]
+            out += members if i is None else [members[int(i) - 1]]
+        else:
+            pool = proposal["singles"] if kind == "S" else proposal.get("studio_views", [])
+            chunk = pool[(n - 1) * 30:n * 30]
+            out += chunk if i is None else [chunk[int(i) - 1]]
+    return out
+
+
+def _auto_slug(kind, first, taken):
+    """untitled-2025-11-12 / drawing-2025-07-25, with -2, -3 … when taken."""
+    base = f"{'drawing' if kind == 'drawing' else 'untitled'}-{first}"
+    slug, n = base, 2
+    while slug in taken:
+        slug, n = f"{base}-{n}", n + 1
+    return slug
+
+
+def apply(path, log=print, draft=False):
+    """Apply review decisions. With draft=True, record the grouping only (archive/drafts.json):
+    no page, image or sketchbook entry is written until publish_drafts."""
     d = yaml.safe_load(open(path)) or {}
     photos = store.photos()
     works = store.load(config.WORKS)
+    drafts = store.load(config.DRAFTS)
     v = None
-    summary = {"public": [], "private": [], "pending": [], "skipped": 0, "held": 0}
+    summary = {"public": [], "private": [], "pending": [], "drafts": [], "skipped": 0, "held": 0}
     stamp = store.now()
+    taken_slugs = set(works) | set(drafts) | {r.get("work") for r in photos.values() if r.get("work")}
 
     def take(pid, work):
         rec = photos[pid]
-        if rec["status"] in ("new", "held", "private-pending") or rec.get("work") == work:
+        if rec["status"] in ("new", "held", "private-pending", "grouped") or rec.get("work") == work:
             return rec
         raise SystemExit(f"{pid} is already {rec['status']} in {rec.get('work')}; not moving it")
 
     for w in d.get("works") or []:
-        slug, kind = w["slug"], w.get("kind", "painting")
+        kind = w.get("kind", "painting")
+        specs = []
+        for s in w["stages"]:
+            s = s if isinstance(s, dict) else {"id": s}
+            specs += [dict(s, id=pid) for pid in _expand([s["id"]], photos)]
+        ids = [s["id"] for s in specs]
+        if len(set(ids)) != len(ids):
+            raise SystemExit(f"{w.get('slug') or ids[0]}: a photo is listed twice")
+        slug = w.get("slug") or "auto"
+        if slug == "auto":
+            slug = _auto_slug(kind, min(photos[p]["taken"][:10] for p in ids), taken_slugs)
+        taken_slugs.add(slug)
         if not SLUG.match(slug):
             raise SystemExit(f"bad slug: {slug}")
-        ids = sorter.resolve([str(s["id"]) for s in w["stages"]], photos)
-        stages = {pid: dict(s, id=pid) for pid, s in zip(ids, w["stages"])}
+        stages = {s["id"]: s for s in specs}
         for pid in ids:
             take(pid, slug)
+
+        if draft:
+            dr = drafts.setdefault(slug, {"kind": kind, "stages": [], "created": stamp})
+            if kind == "painting":  # drawings keep no text in the public archive
+                for k in ("title", "status", "medium", "size", "text", "hero"):
+                    if w.get(k):
+                        dr[k] = sorter.resolve([str(w[k])], photos)[0] if k == "hero" else w[k]
+            old = {st["id"]: st for st in dr["stages"]}
+            for pid, s in stages.items():
+                st = old.setdefault(pid, {"id": pid})
+                for k in (("label", "note", "crop", "rotate") if kind == "painting" else ("crop", "rotate")):
+                    if s.get(k) is not None:
+                        st[k] = s[k]
+            dr["stages"] = sorted(old.values(), key=lambda st: photos[st["id"]]["ts"])
+            dr["updated"] = stamp
+            for pid in ids:
+                photos[pid].update(kind=kind, work=slug, status="grouped")
+            summary["drafts"].append(slug)
+            continue
 
         if kind == "painting":
             cur = works.get(slug)
@@ -253,16 +326,45 @@ def apply(path, log=print):
             raise SystemExit(f"{slug}: kind must be painting or drawing")
 
     for key, status in (("skip", "skipped"), ("hold", "held")):
-        for pid, reason in (d.get(key) or {}).items():
-            pid = sorter.resolve([str(pid)], photos)[0]
-            take(pid, photos[pid].get("work"))
-            photos[pid].update(status=status, reason=str(reason))
-            summary["skipped" if status == "skipped" else "held"] += 1
+        for ref, reason in (d.get(key) or {}).items():
+            for pid in _expand([ref], photos):
+                take(pid, photos[pid].get("work"))
+                photos[pid].update(status=status, reason=str(reason))
+                summary["skipped" if status == "skipped" else "held"] += 1
 
     if v is not None:
         v.save_index(idx)
     store.save(config.WORKS, works)
+    store.save(config.DRAFTS, drafts)
     store.save(config.PHOTOS, photos)
+    return summary
+
+
+def publish_drafts(slugs=None, log=print):
+    """Publish grouped drafts (all, or the given slugs): paintings to their pages,
+    drawings to the sketchbook (or private-pending without VAULT_PASSWORD)."""
+    import tempfile
+
+    drafts = store.load(config.DRAFTS)
+    chosen = list(drafts) if not slugs else slugs
+    missing = [s for s in chosen if s not in drafts]
+    if missing:
+        raise SystemExit("no such draft: " + ", ".join(missing))
+    entries = []
+    for slug in chosen:
+        dr = drafts[slug]
+        e = {k: v for k, v in dr.items() if k not in ("created", "updated")}
+        e["slug"] = slug
+        if dr["kind"] == "painting" and not e.get("title"):
+            e["title"] = "Untitled"
+        entries.append(e)
+    with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False) as f:
+        yaml.safe_dump({"works": entries}, f, allow_unicode=True)
+    summary = apply(f.name, log)
+    drafts = store.load(config.DRAFTS)
+    for slug in chosen:
+        drafts.pop(slug, None)
+    store.save(config.DRAFTS, drafts)
     return summary
 
 

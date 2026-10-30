@@ -172,6 +172,19 @@ hold:
   2b7e10: "is this Mahdi's work?"
 ```
 
+Shorthand: a stage `id` can also be `G045` (every photo of proposed group 45)
+or `S003#4` / `V001#2` (the 4th photo on singles sheet S003, the 2nd on
+studio-views sheet V001), and `slug` can be `auto` or left out
+(`untitled-<date>` / `drawing-<date>`). The same references work as keys
+under `skip` and `hold`.
+
+**When Mahdi wants to check before anything is published**, apply with
+`--draft`: the grouping is recorded in `archive/drafts.json` and the photos
+become `grouped`, but no page, image or sketchbook entry is written.
+`python3 -m pipeline drafts` lists them; `python3 -m pipeline publish-drafts
+[slug …]` publishes the ones he approves (all, without slugs). Drafts keep
+no text for drawings, because the archive is public.
+
 Adding stages to an existing work: list only the new stages under its slug;
 earlier stages keep their notes. Hand-written pages (no `archive:` line in
 their front matter) cannot be changed by `apply`. Render the images with

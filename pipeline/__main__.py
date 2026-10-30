@@ -66,10 +66,24 @@ def cmd_propose(a):
 
 
 def cmd_apply(a):
-    summary = publish.apply(a.decisions)
+    summary = publish.apply(a.decisions, draft=a.draft)
     print(json.dumps(summary, indent=1))
     if summary["pending"]:
         print("drawings wait for VAULT_PASSWORD before they go into the sketchbook:", ", ".join(summary["pending"]))
+
+
+def cmd_publish_drafts(a):
+    print(json.dumps(publish.publish_drafts(a.slugs or None), indent=1))
+
+
+def cmd_drafts(a):
+    drafts = store.load(config.DRAFTS)
+    photos = store.photos()
+    for slug, dr in sorted(drafts.items(), key=lambda kv: photos[kv[1]["stages"][0]["id"]]["taken"]):
+        first = photos[dr["stages"][0]["id"]]["taken"][:10]
+        last = photos[dr["stages"][-1]["id"]]["taken"][:10]
+        print(f"{dr['kind']:8} {len(dr['stages']):3} photos  {first} → {last}  {slug}  {dr.get('title', '')}")
+    print(f"{len(drafts)} drafts")
 
 
 def cmd_publish_pending(a):
@@ -147,7 +161,13 @@ def main(argv=None):
     s.set_defaults(fn=cmd_propose)
     s = sub.add_parser("apply", help="apply a review's decisions (YAML) and publish")
     s.add_argument("decisions")
+    s.add_argument("--draft", action="store_true",
+                   help="only record the grouping (archive/drafts.json); publish later with publish-drafts")
     s.set_defaults(fn=cmd_apply)
+    sub.add_parser("drafts", help="list works grouped but not yet published").set_defaults(fn=cmd_drafts)
+    s = sub.add_parser("publish-drafts", help="publish grouped drafts (all, or the given slugs)")
+    s.add_argument("slugs", nargs="*")
+    s.set_defaults(fn=cmd_publish_drafts)
     sub.add_parser("publish-pending", help="move drawings that waited for VAULT_PASSWORD into the sketchbook"
                    ).set_defaults(fn=cmd_publish_pending)
     s = sub.add_parser("render", help="watermarked web copy of one photo")

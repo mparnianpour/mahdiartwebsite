@@ -254,7 +254,8 @@ def propose(log=print):
     gone = ingest.fetch([p for p in new if not (config.THUMBS / f"{p}.jpg").exists()], log)
     if gone:
         log(f"{len(gone)} waiting photos could not be fetched from Drive (source deleted?)")
-    anchors = {p for p in ids if photos[p].get("work") and photos[p]["status"] in ("published", "private")}
+    anchors = {p for p in ids if photos[p].get("work")
+               and photos[p]["status"] in ("published", "private", "grouped", "private-pending")}
     pool = [p for p in ids if p in anchors or photos[p]["status"] == "new"]
     pidx = np.array([pos[p] for p in pool])
     ts = {p: photos[p].get("ts") or 0 for p in pool}
