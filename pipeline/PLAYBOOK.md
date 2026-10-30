@@ -161,7 +161,7 @@ works:
       How the work developed, in two or three sentences.
     hero: "030432"                      # optional; default: the latest stage
     stages:                             # any order; sorted by date when published
-      - id: ef7d64                      # 6+ characters of the photo id; quote all-digit ids
+      - id: "ef7d64"                    # 6+ characters of the photo id, quoted
         label: Reeds
         note: What changed in this photo.
         rotate: 90                      # optional, degrees clockwise
@@ -181,9 +181,16 @@ under `skip` and `hold`.
 **When Mahdi wants to check before anything is published**, apply with
 `--draft`: the grouping is recorded in `archive/drafts.json` and the photos
 become `grouped`, but no page, image or sketchbook entry is written.
-`python3 -m pipeline drafts` lists them; `python3 -m pipeline publish-drafts
-[slug …]` publishes the ones he approves (all, without slugs). Drafts keep
-no text for drawings, because the archive is public.
+`python3 -m pipeline drafts` lists them; `python3 -m pipeline preview -o
+review.html` makes a private review page of the titled drafts (send it to
+him; never commit it), and `python3 -m pipeline publish-drafts [slug …]`
+publishes the ones he approves (all, without slugs). Drafts keep no text
+for drawings, because the archive is public. A photo given to another
+draft leaves its old one, and a skipped photo leaves its draft.
+
+Write each stage as a block (`- id: …` then `label:` and `note:` on their
+own lines), never in `{…}` flow style: a comma inside a flow mapping ends
+the value and silently cuts the note short.
 
 Adding stages to an existing work: list only the new stages under its slug;
 earlier stages keep their notes. Hand-written pages (no `archive:` line in

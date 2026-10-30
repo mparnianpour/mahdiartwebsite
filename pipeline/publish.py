@@ -250,6 +250,10 @@ def apply(path, log=print, draft=False):
             take(pid, slug)
 
         if draft:
+            for other in [k for k in drafts if k != slug]:  # a photo moved here leaves its old draft
+                drafts[other]["stages"] = [st for st in drafts[other]["stages"] if st["id"] not in stages]
+                if not drafts[other]["stages"]:
+                    del drafts[other]
             dr = drafts.setdefault(slug, {"kind": kind, "stages": [], "created": stamp})
             if kind == "painting":  # drawings keep no text in the public archive
                 for k in ("title", "status", "medium", "size", "text", "hero"):
@@ -330,6 +334,11 @@ def apply(path, log=print, draft=False):
             for pid in _expand([ref], photos):
                 take(pid, photos[pid].get("work"))
                 photos[pid].update(status=status, reason=str(reason))
+                dr = drafts.get(photos[pid].pop("work", None))
+                if dr:  # taken out of its draft; a draft left empty goes too
+                    dr["stages"] = [st for st in dr["stages"] if st["id"] != pid]
+                    if not dr["stages"]:
+                        drafts.pop(next(k for k, v in drafts.items() if v is dr))
                 summary["skipped" if status == "skipped" else "held"] += 1
 
     if v is not None:

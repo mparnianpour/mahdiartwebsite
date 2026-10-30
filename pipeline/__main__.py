@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import comments, config, ingest, publish, sorter, store, vault
+from . import comments, config, ingest, preview, publish, sorter, store, vault
 
 
 def cmd_status(a):
@@ -84,6 +84,13 @@ def cmd_drafts(a):
         last = photos[dr["stages"][-1]["id"]]["taken"][:10]
         print(f"{dr['kind']:8} {len(dr['stages']):3} photos  {first} → {last}  {slug}  {dr.get('title', '')}")
     print(f"{len(drafts)} drafts")
+
+
+def cmd_preview(a):
+    drafts = store.load(config.DRAFTS)
+    slugs = a.slugs or [s for s, d in drafts.items() if d["kind"] == "painting" and d.get("title")]
+    done = preview.build(slugs, a.out, a.title)
+    print(f"{a.out}: {len(done)} drafts")
 
 
 def cmd_publish_pending(a):
@@ -165,6 +172,11 @@ def main(argv=None):
                    help="only record the grouping (archive/drafts.json); publish later with publish-drafts")
     s.set_defaults(fn=cmd_apply)
     sub.add_parser("drafts", help="list works grouped but not yet published").set_defaults(fn=cmd_drafts)
+    s = sub.add_parser("preview", help="private HTML review page of drafts (default: titled paintings)")
+    s.add_argument("slugs", nargs="*")
+    s.add_argument("-o", "--out", required=True)
+    s.add_argument("--title", default="Drafts to review")
+    s.set_defaults(fn=cmd_preview)
     s = sub.add_parser("publish-drafts", help="publish grouped drafts (all, or the given slugs)")
     s.add_argument("slugs", nargs="*")
     s.set_defaults(fn=cmd_publish_drafts)
