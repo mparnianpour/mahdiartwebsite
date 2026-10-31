@@ -537,6 +537,45 @@ time {
 .sketch figcaption { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 10px; font-size: 14px; color: var(--ink-2); }
 .sketch figcaption time { color: var(--ink-3); }
 
+.vault + .section { margin-top: var(--space); }
+.vault__form { max-width: 34rem; }
+.vault__form label { display: block; color: var(--ink-2); }
+.vault__row { display: flex; gap: 10px; margin-top: 14px; }
+.vault__row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+.vault__row button,
+.vault__lock {
+  padding: 10px 18px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: 500 15px/1.2 var(--sans);
+  cursor: pointer;
+}
+.vault__row button:disabled { opacity: 0.6; cursor: progress; }
+.vault__message { min-height: 1.6em; margin-top: 10px; font-size: 15px; color: var(--accent); }
+.vault__bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 28px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.vault__lock { padding: 6px 12px; background: transparent; color: var(--ink); font-size: 13px; }
+.vault__lock:hover { color: var(--accent); border-color: var(--accent); }
+
 .study-group + .study-group { margin-top: 64px; }
 .study-group__title {
   display: flex;
@@ -570,6 +609,47 @@ time {
 .page__title { font-family: var(--serif); font-size: clamp(44px, 7vw, 84px); line-height: 1; letter-spacing: -0.015em; }
 .page__lede { max-width: 56ch; margin-top: 18px; font-size: 19px; color: var(--ink-2); }
 .page__meta { margin-bottom: 40px; font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+
+/* Comments -------------------------------------------------------------- */
+
+.comment-form form { display: grid; gap: 18px; max-width: 40rem; }
+.comment-form__row { display: grid; gap: 6px; }
+.comment-form label { color: var(--ink-2); }
+.comment-form label span { color: var(--ink-3); font-size: 14px; }
+.comment-form input,
+.comment-form select,
+.comment-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+.comment-form textarea { resize: vertical; }
+.comment-form button {
+  justify-self: start;
+  padding: 10px 22px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: 500 15px/1.2 var(--sans);
+  cursor: pointer;
+}
+.comment-form button:disabled { opacity: 0.6; cursor: progress; }
+.comment-form__status { min-height: 1.6em; color: var(--ink-2); }
+
+.comment-list { margin: 0; padding: 0; list-style: none; max-width: 46rem; }
+.comment { padding-block: 28px; border-top: 1px solid var(--rule); }
+.comment:first-child { border-top: 0; padding-top: 4px; }
+.comment:last-child { border-bottom: 1px solid var(--rule); }
+.comment__meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; color: var(--ink-3); }
+.comment__name { color: var(--ink); font-weight: 500; }
+.comment__text { margin-top: 10px; }
+.comment__reply { margin-top: 12px; padding-left: 14px; border-left: 2px solid var(--rule); color: var(--ink-2); }
+.comment__reply span { display: block; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
 
 /* Journal list / entry ------------------------------------------------- */
 
@@ -732,3 +812,43 @@ h1.log__title { font-size: clamp(34px, 5vw, 56px); }
   .pager a { font-size: 18px; }
   .cv__list li { grid-template-columns: 56px 1fr; }
 }
+
+/* View on your wall ------------------------------------------------------ */
+
+.wall__head { padding-top: clamp(40px, 6vw, 80px); }
+.wall__title { font-family: var(--serif); font-size: clamp(36px, 5vw, 60px); line-height: 1.05; }
+.wall__line { margin-top: 12px; color: var(--ink-2); max-width: 66ch; }
+
+.wall__viewer {
+  display: block;
+  width: 100%;
+  height: min(76vh, 760px);
+  margin-top: clamp(24px, 4vw, 40px);
+  background: var(--paper-2);
+  --poster-color: transparent;
+}
+.wall__viewer[hidden] { display: none; }
+.wall__ar {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 500 14px var(--mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.wall__ar:hover { background: var(--accent); }
+
+.wall__notes { margin-top: 20px; max-width: 66ch; color: var(--ink-2); }
+.wall__notes p + p { margin-top: 0.8em; }
+.wall__status { font-family: var(--mono); font-size: 13px; }
+.wall__others { margin-top: 24px; }
+.wall__others ul { margin: 8px 0 0; padding-left: 1.2em; }
+
+.work__wall { margin-top: 20px; text-align: center; }

@@ -19,6 +19,7 @@ body_class: page-work
       <img src="{{ page.image | relative_url }}" alt="{{ page.title }}, {{ page.year }}{% if page.medium %}, {{ page.medium }}{% endif %}">
     </a>
   </figure>
+  <p class="wrap work__wall"><a class="arrow-link" href="{{ '/wall/' | relative_url }}?work={{ page.slug }}">View on your wall, framed</a></p>
 
   <div class="wrap work__body">
     <dl class="facts">

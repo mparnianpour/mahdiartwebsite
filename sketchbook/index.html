@@ -3,6 +3,28 @@ layout: page
 title: Sketchbook
 lede: Drawing comes first. Some sketches are daily practice; others become paintings.
 ---
+{% assign vault = site.data.vault %}
+{% if vault and vault.drawings > 0 %}
+<section class="section section--flush vault" data-vault data-base="{{ '/assets/vault/' | relative_url }}">
+  <script type="application/json" data-vault-meta>{"salt": {{ vault.salt | jsonify }}, "iterations": {{ vault.iterations }}, "check": {{ vault.check | jsonify }}}</script>
+  <header class="section__head">
+    <h2 class="section__title">Sketches and drawings</h2>
+    <p class="section__aside">{{ vault.drawings }} drawing{% if vault.drawings != 1 %}s{% endif %} · private</p>
+  </header>
+  <form class="vault__form" data-vault-form>
+    <label for="vault-password">This part of the sketchbook is private. Enter the password to open it.</label>
+    <div class="vault__row">
+      <input id="vault-password" type="password" autocomplete="current-password" required>
+      <button type="submit">Open</button>
+    </div>
+    <p class="vault__message" data-vault-message role="status" aria-live="polite"></p>
+  </form>
+  <div data-vault-content hidden></div>
+  <noscript><p class="vault__message">The private sketchbook needs JavaScript.</p></noscript>
+  <script src="{{ '/assets/js/vault.js' | relative_url }}" defer></script>
+</section>
+{% endif %}
+
 {% assign daily = site.posts | where: "type", "sketch" %}
 {% if daily.size > 0 %}
 <section class="section section--flush">
@@ -31,7 +53,7 @@ lede: Drawing comes first. Some sketches are daily practice; others become paint
 {% assign works = site.works | sort: "date" | reverse %}
 {% assign has_studies = false %}
 {% for w in works %}{% if w.sketches.size > 0 %}{% assign has_studies = true %}{% endif %}{% endfor %}
-{% if daily.size == 0 and has_studies == false %}
+{% if daily.size == 0 and has_studies == false and vault.drawings == nil %}
 <p class="page__lede">The first sketches will appear here soon.</p>
 {% endif %}
 {% if has_studies %}
