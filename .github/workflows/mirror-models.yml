@@ -1,0 +1,47 @@
+# Copies the image model used by pipeline/ into this repository's
+# "models-v1" release, so pipeline runs can download it from GitHub.
+name: Mirror pipeline models
+# Run by hand (Actions -> Mirror pipeline models -> Run workflow). It never
+# replaces a model already in the release: pipeline runs check its SHA-256
+# (archive/settings.json), and a re-export would not be byte-identical.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip if the release already has the model
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view models-v1 --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null | grep -qx dinov2-small.onnx; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.exists != 'true'
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.exists != 'true'
+        with:
+          python-version: "3.12"
+      - name: Install
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers==4.46.3 onnx==1.17.0 onnxruntime==1.20.1 "numpy<2.2"
+      - name: Export DINOv2-small
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          python pipeline/export_model.py dinov2-small.onnx
+          sha256sum dinov2-small.onnx | tee dinov2-small.onnx.sha256
+      - name: Upload to release
+        if: steps.check.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view models-v1 >/dev/null 2>&1 || gh release create models-v1 \
+            --title "Pipeline models" \
+            --notes "Image model used by pipeline/ to group photos of the same painting. DINOv2-small (Apache-2.0, Meta), exported to ONNX by .github/workflows/mirror-models.yml."
+          gh release upload models-v1 dinov2-small.onnx dinov2-small.onnx.sha256

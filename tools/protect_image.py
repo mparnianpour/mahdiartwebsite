@@ -106,6 +106,29 @@ def xmp_packet(year):
 <?xpacket end="w"?>""".encode("utf-8")
 
 
+def protect(img, year, style="tiled", crop=None, max_side=2000):
+    """Return a resized, watermarked RGB copy of a PIL image. `crop` is a pixel box."""
+    img = ImageOps.exif_transpose(img).convert("RGB")
+    if crop:
+        img = img.crop(tuple(int(v) for v in crop))
+    if max(img.size) > max_side:
+        img.thumbnail((max_side, max_side), Image.LANCZOS)
+    out = img.convert("RGBA")
+    if style == "tiled":
+        out = tiled(out, f"© {ARTIST.upper()}")
+    return corner_credit(out, f"© {year} {ARTIST}").convert("RGB")
+
+
+def save(img, path, year):
+    """Save as JPEG with the copyright and no-AI-training metadata."""
+    exif = Image.Exif()
+    exif[0x013B] = ARTIST                                         # Artist
+    exif[0x8298] = f"Copyright {year} {ARTIST}. All rights reserved."  # Copyright (EXIF is ASCII only)
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    img.save(path, "JPEG", quality=85, optimize=True, progressive=True,
+             exif=exif, xmp=xmp_packet(year))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("input")
@@ -116,24 +139,9 @@ def main():
     p.add_argument("--max", type=int, default=2000)
     a = p.parse_args()
 
-    img = ImageOps.exif_transpose(Image.open(a.input)).convert("RGB")
-    if a.crop:
-        img = img.crop(tuple(int(v) for v in a.crop.split(",")))
-    if max(img.size) > a.max:
-        img.thumbnail((a.max, a.max), Image.LANCZOS)
-
-    credit = f"© {a.year} {ARTIST}"
-    out = img.convert("RGBA")
-    if a.style == "tiled":
-        out = tiled(out, f"© {ARTIST.upper()}")
-    out = corner_credit(out, credit).convert("RGB")
-
-    exif = Image.Exif()
-    exif[0x013B] = ARTIST                                         # Artist
-    exif[0x8298] = f"Copyright {a.year} {ARTIST}. All rights reserved."  # Copyright (EXIF is ASCII only)
-    os.makedirs(os.path.dirname(os.path.abspath(a.output)), exist_ok=True)
-    out.save(a.output, "JPEG", quality=85, optimize=True, progressive=True,
-             exif=exif, xmp=xmp_packet(a.year))
+    crop = a.crop.split(",") if a.crop else None
+    out = protect(Image.open(a.input), a.year, a.style, crop, a.max)
+    save(out, a.output, a.year)
     print(f"{a.output}  {out.size[0]}×{out.size[1]}  watermark: {a.style}")
 
 

@@ -1,0 +1,86 @@
+---
+layout: page
+title: Comments
+lede: Notes from visitors on the paintings and the site. Comments appear here after they have been read.
+---
+{% assign form = site.comments %}
+{% if site.data.comments %}{% assign comments = site.data.comments | sort: "date" | reverse %}{% else %}{% assign comments = "" | split: "," %}{% endif %}
+
+{% if form.form and form.form != "" %}
+<section class="section section--flush comment-form">
+  <header class="section__head">
+    <h2 class="section__title">Leave a comment</h2>
+  </header>
+  <form action="https://docs.google.com/forms/d/e/{{ form.form }}/formResponse" method="post" target="_blank" data-comment-form>
+    <div class="comment-form__row">
+      <label for="c-name">Your name <span>(optional)</span></label>
+      <input id="c-name" name="{{ form.name }}" type="text" maxlength="80" autocomplete="name">
+    </div>
+    {% if form.work and form.work != "" %}
+    <div class="comment-form__row">
+      <label for="c-work">About <span>(optional)</span></label>
+      <select id="c-work" name="{{ form.work }}">
+        <option value="">The site in general</option>
+        {% assign works = site.works | sort: "date" | reverse %}
+        {% for w in works %}<option value="{{ w.title | escape }}">{{ w.title }} ({{ w.year }})</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="comment-form__row">
+      <label for="c-message">Comment</label>
+      <textarea id="c-message" name="{{ form.message }}" rows="6" maxlength="3000" required></textarea>
+    </div>
+    <button type="submit">Send</button>
+    <p class="comment-form__status" data-comment-status role="status" aria-live="polite"></p>
+  </form>
+</section>
+{% endif %}
+
+<section class="section{% unless form.form and form.form != "" %} section--flush{% endunless %}">
+  <header class="section__head">
+    <h2 class="section__title">From visitors</h2>
+    {% if comments.size > 0 %}<p class="section__aside">{{ comments.size }} comment{% if comments.size != 1 %}s{% endif %}</p>{% endif %}
+  </header>
+  {% if comments.size > 0 %}
+  <ol class="comment-list">
+    {% for c in comments %}
+    <li class="comment">
+      <p class="comment__meta">
+        <span class="comment__name">{{ c.name | default: "A visitor" | escape }}</span>
+        <time datetime="{{ c.date | date: '%Y-%m-%d' }}">{{ c.date | date: "%-d %b %Y" }}</time>
+        {% if c.work %}{% assign w = site.works | where: "title", c.work | first %}<span>on {% if w %}<a href="{{ w.url | relative_url }}">{{ c.work | escape }}</a>{% else %}{{ c.work | escape }}{% endif %}</span>{% endif %}
+      </p>
+      <p class="comment__text">{{ c.text | escape | newline_to_br }}</p>
+      {% if c.reply %}<p class="comment__reply"><span>Reply</span> {{ c.reply | escape }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="page__lede">No comments yet.</p>
+  {% endif %}
+</section>
+
+<script>
+  (function () {
+    var form = document.querySelector("[data-comment-form]");
+    if (!form || !window.fetch) return;
+    var status = form.querySelector("[data-comment-status]");
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var button = form.querySelector("button");
+      button.disabled = true;
+      status.textContent = "Sending…";
+      // Google Forms does not allow reading the reply from another site, so a
+      // finished request is taken as success.
+      fetch(form.action, { method: "POST", mode: "no-cors", body: new URLSearchParams(new FormData(form)) })
+        .then(function () {
+          form.reset();
+          status.textContent = "Thank you. Your comment will appear here once it has been read.";
+        })
+        .catch(function () {
+          status.textContent = "It could not be sent. Please try again later.";
+        })
+        .then(function () { button.disabled = false; });
+    });
+  })();
+</script>

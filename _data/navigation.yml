@@ -6,5 +6,8 @@
 - title: Sketchbook
   url: /sketchbook/
   needs: sketches
+- title: Comments
+  url: /comments/
+  needs: comments
 - title: About
   url: /about/

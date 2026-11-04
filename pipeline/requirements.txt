@@ -1,0 +1,8 @@
+# The archive pipeline. Pillow, NumPy, PyYAML, cryptography and onnxruntime
+# are usually already installed in the cloud environment; OpenCV usually is not.
+pillow>=11
+numpy>=1.26
+pyyaml>=6
+cryptography>=42
+onnxruntime>=1.18
+opencv-python-headless>=4.8
