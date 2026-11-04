@@ -98,6 +98,9 @@ def publish_work(slug, works=None, photos=None, log=print):
     if page.exists() and fm.get("archive") != slug:
         raise SystemExit(f"{page.name} was written by hand; add stages to it by hand (see PLAYBOOK)")
     last = photos[w["stages"][-1]["id"]]
+    # A work is dated by when the painting was finished, which can be earlier
+    # than its last photo (e.g. a photo of it framed months later).
+    when = datetime.date.fromisoformat(w["finished"]) if w.get("finished") else _date(last)
     hero = w.get("hero") or w["stages"][-1]["id"]
     new = {"title": w["title"]}
     for k in ("medium", "size"):
@@ -109,7 +112,7 @@ def publish_work(slug, works=None, photos=None, log=print):
         if k not in MANAGED_KEYS and not (k in new and w.get("_set", {}).get(k)):
             new[k] = v
     new.update({
-        "date": _date(last), "year": _date(last).year,
+        "date": when, "year": when.year,
         "image": f"/assets/img/works/{slug}/{hero}.jpg",
         "archive": slug,
         "stages": [{k: v for k, v in (("image", f"/assets/img/works/{slug}/{st['id']}.jpg"),
@@ -212,6 +215,17 @@ def _auto_slug(kind, first, taken):
     return slug
 
 
+WORK_FIELDS = ("title", "status", "medium", "size", "text", "hero", "finished")
+
+
+def _field(k, v, photos):
+    if k == "hero":
+        return sorter.resolve([str(v)], photos)[0]
+    if k == "finished":  # YYYY-MM-DD; YAML may already have parsed it as a date
+        return datetime.date.fromisoformat(str(v)).isoformat()
+    return v
+
+
 def apply(path, log=print, draft=False):
     """Apply review decisions. With draft=True, record the grouping only (archive/drafts.json):
     no page, image or sketchbook entry is written until publish_drafts."""
@@ -233,13 +247,15 @@ def apply(path, log=print, draft=False):
     for w in d.get("works") or []:
         kind = w.get("kind", "painting")
         specs = []
-        for s in w["stages"]:
+        for s in w.get("stages") or []:  # none: only the work's own fields change
             s = s if isinstance(s, dict) else {"id": s}
             specs += [dict(s, id=pid) for pid in _expand([s["id"]], photos)]
         ids = [s["id"] for s in specs]
         if len(set(ids)) != len(ids):
             raise SystemExit(f"{w.get('slug') or ids[0]}: a photo is listed twice")
         slug = w.get("slug") or "auto"
+        if slug == "auto" and not ids:
+            raise SystemExit("a work without stages needs its slug")
         if slug == "auto":
             slug = _auto_slug(kind, min(photos[p]["taken"][:10] for p in ids), taken_slugs)
         taken_slugs.add(slug)
@@ -256,9 +272,9 @@ def apply(path, log=print, draft=False):
                     del drafts[other]
             dr = drafts.setdefault(slug, {"kind": kind, "stages": [], "created": stamp})
             if kind == "painting":  # drawings keep no text in the public archive
-                for k in ("title", "status", "medium", "size", "text", "hero"):
+                for k in WORK_FIELDS:
                     if w.get(k):
-                        dr[k] = sorter.resolve([str(w[k])], photos)[0] if k == "hero" else w[k]
+                        dr[k] = _field(k, w[k], photos)
             old = {st["id"]: st for st in dr["stages"]}
             for pid, s in stages.items():
                 st = old.setdefault(pid, {"id": pid})
@@ -279,9 +295,9 @@ def apply(path, log=print, draft=False):
                     raise SystemExit(f"{slug}: a new work needs a title")
                 cur = works[slug] = {"title": w["title"], "kind": "painting", "stages": [], "created": stamp}
             cur["_set"] = {}
-            for k in ("title", "status", "medium", "size", "text", "hero"):
+            for k in WORK_FIELDS:
                 if w.get(k):
-                    cur[k] = sorter.resolve([str(w[k])], photos)[0] if k == "hero" else w[k]
+                    cur[k] = _field(k, w[k], photos)
                     cur["_set"][k] = True
             old = {st["id"]: st for st in cur["stages"]}
             for pid, s in stages.items():
@@ -290,6 +306,8 @@ def apply(path, log=print, draft=False):
                     if s.get(k) is not None:
                         st[k] = s[k]
             cur["stages"] = sorted(old.values(), key=lambda st: photos[st["id"]]["ts"])
+            if not cur["stages"]:
+                raise SystemExit(f"{slug}: a new work needs stages")
             cur["updated"] = stamp
             for pid in ids:
                 photos[pid].update(kind="painting", work=slug, status="published")

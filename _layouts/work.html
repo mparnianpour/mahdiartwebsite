@@ -26,7 +26,7 @@ body_class: page-work
       {% if page.year %}<div><dt>Year</dt><dd>{{ page.year }}</dd></div>{% endif %}
       {% if page.medium %}<div><dt>Medium</dt><dd>{{ page.medium }}</dd></div>{% endif %}
       {% if page.size %}<div><dt>Size</dt><dd>{{ page.size }}</dd></div>{% endif %}
-      {% if ws_start %}<div><dt>Worked on</dt><dd>{{ ws_start | date: "%-d %b %Y" }} – {% if page.status == "In progress" %}ongoing{% else %}{{ ws_end | date: "%-d %b %Y" }}{% endif %}</dd></div>{% endif %}
+      {% if ws_start %}{% assign ws_from = ws_start | date: "%-d %b %Y" %}{% assign ws_to = ws_end | date: "%-d %b %Y" %}<div><dt>Worked on</dt><dd>{% if page.status == "In progress" %}{{ ws_from }} – ongoing{% elsif ws_from == ws_to %}{{ ws_from }}{% else %}{{ ws_from }} – {{ ws_to }}{% endif %}</dd></div>{% endif %}
       {% if ws_frames > 1 %}<div><dt>Stages recorded</dt><dd>{{ ws_frames }}</dd></div>{% endif %}
       {% if ws_sketches > 0 %}<div><dt>Sketches</dt><dd>{{ ws_sketches }}</dd></div>{% endif %}
       {% if ws_sessions > 0 %}<div><dt>Journal entries</dt><dd>{{ ws_sessions }}</dd></div>{% endif %}

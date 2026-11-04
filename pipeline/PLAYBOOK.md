@@ -160,6 +160,9 @@ works:
     text: |
       How the work developed, in two or three sentences.
     hero: "030432"                      # optional; default: the latest stage
+    finished: 2025-11-09                # optional; the date the work is listed under. Default:
+                                        # the latest photo. Set it when the latest photo was taken
+                                        # long after the painting was done (e.g. framed later).
     stages:                             # any order; sorted by date when published
       - id: "ef7d64"                    # 6+ characters of the photo id, quoted
         label: Reeds
@@ -191,6 +194,9 @@ draft leaves its old one, and a skipped photo leaves its draft.
 Write each stage as a block (`- id: …` then `label:` and `note:` on their
 own lines), never in `{…}` flow style: a comma inside a flow mapping ends
 the value and silently cuts the note short.
+
+Changing only a work's own fields (title, text, finished date…): give its slug
+and the fields, without `stages`.
 
 Adding stages to an existing work: list only the new stages under its slug;
 earlier stages keep their notes. Hand-written pages (no `archive:` line in
