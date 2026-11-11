@@ -38,6 +38,14 @@ def cmd_embed(a):
     print(f"embedded {sorter.embed(todo, a.batch or store.batch_id())} photos")
 
 
+def cmd_add_files(a):
+    batch, ids = ingest.add_files(a.files)
+    new = [p for p in ids if store.photos()[p]["status"] == "new"]
+    if new:
+        sorter.embed(new, batch)
+    print("ids in time order:", " ".join(p[:6] for p in ids))
+
+
 def cmd_fetch(a):
     missing = ingest.fetch(sorter.resolve(a.ids))
     if missing:
@@ -149,6 +157,9 @@ def main(argv=None):
     s = sub.add_parser("embed", help="embed photos that have no embedding yet")
     s.add_argument("--batch")
     s.set_defaults(fn=cmd_embed)
+    s = sub.add_parser("add-files", help="record photos given as local files (e.g. sent in chat), then embed them")
+    s.add_argument("files", nargs="+")
+    s.set_defaults(fn=cmd_add_files)
     s = sub.add_parser("fetch", help="bring full-size originals back into the cache")
     s.add_argument("ids", nargs="+")
     s.set_defaults(fn=cmd_fetch)
