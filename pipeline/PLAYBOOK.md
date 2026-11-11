@@ -60,6 +60,11 @@ python3 -m pipeline publish-pending   # only if VAULT_PASSWORD is set
 python3 -m pipeline propose           # groups + review sheets in ~/.cache/mahdiart-pipeline/review/
 ```
 
+Photos Mahdi sends in chat: `python3 -m pipeline add-files <files…>` records them
+(dates from their EXIF), then write a decision for them as for any other photos.
+They are not in Drive, so keep the work's final crop and rotation right the
+first time: re-rendering later needs the files again.
+
 `propose` compares every waiting photo with all photos already published,
 including the works Mahdi put on the site by hand, so a new stage of a
 painting from months ago is linked to it ("continues …"), and a photo that is

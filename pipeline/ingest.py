@@ -248,13 +248,40 @@ def _store_original(pid, rec, data):
     return True
 
 
+def add_files(paths, album="upload", log=print):
+    """Record photos given as local files (e.g. sent by Mahdi in chat). Returns their ids, in time order.
+
+    Their full-size originals stay only in this session's cache: they are not in Drive,
+    so re-rendering one later needs the file again.
+    """
+    import os
+
+    photos = store.photos()
+    batch = store.batch_id()
+    ids = []
+    for path in paths:
+        data = open(path, "rb").read()
+        name = os.path.basename(path)
+        result = add_item(photos, data, name, {"upload": name}, album, batch)
+        pid = hashlib.sha256(data).hexdigest()[:12]
+        if result == "known" and not original_path(pid):
+            config.ORIGINALS.mkdir(parents=True, exist_ok=True)
+            (config.ORIGINALS / f"{pid}{PurePosixPath(name).suffix.lower()}").write_bytes(data)
+        log(f"  {name}: {result} ({pid}, taken {photos[pid].get('taken')})")
+        ids.append(pid)
+    store.save(config.PHOTOS, photos)
+    ids.sort(key=lambda p: photos[p].get("ts") or 0)
+    return batch, ids
+
+
 def fetch(pids, log=print):
     """Make sure the full-size originals of these photos are in the cache (e.g. in a later batch).
 
     Returns the ids that could not be fetched (their Drive files are gone).
     """
     photos, sources = store.photos(), store.load(config.SOURCES)
-    todo = [p for p in dict.fromkeys(pids) if not original_path(p) and "site" not in photos[p]["source"]]
+    # Photos sent in chat ("upload") or taken from the site's own pages ("site") have no Drive copy.
+    todo = [p for p in dict.fromkeys(pids) if not original_path(p) and "drive" in photos[p]["source"]]
     by_zip = {}
     for pid in todo:
         src = photos[pid]["source"]
@@ -300,7 +327,7 @@ def fetch(pids, log=print):
                     data = tmp.read_bytes()
                     tmp.unlink()
             except (gdrive.DriveError, KeyError, zipfile.BadZipFile) as e:
-                log(f"  {pid}: source {src['drive']} unavailable ({e})")
+                log(f"  {pid}: source {src.get('drive')} unavailable ({e})")
                 continue
             if _store_original(pid, rec, data):
                 break
