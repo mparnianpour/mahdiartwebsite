@@ -103,7 +103,7 @@ def publish_work(slug, works=None, photos=None, log=print):
     when = datetime.date.fromisoformat(w["finished"]) if w.get("finished") else _date(last)
     hero = w.get("hero") or w["stages"][-1]["id"]
     new = {"title": w["title"]}
-    for k in ("medium", "size"):
+    for k in ("medium", "size", "with", "instagram_post"):
         if w.get(k):
             new[k] = w[k]
     if w.get("status"):
@@ -215,7 +215,8 @@ def _auto_slug(kind, first, taken):
     return slug
 
 
-WORK_FIELDS = ("title", "status", "medium", "size", "text", "hero", "finished")
+# `with`: collaborators, a list of {name, url}; `instagram_post`: the work's post.
+WORK_FIELDS = ("title", "status", "medium", "size", "text", "hero", "finished", "with", "instagram_post")
 
 
 def _field(k, v, photos):

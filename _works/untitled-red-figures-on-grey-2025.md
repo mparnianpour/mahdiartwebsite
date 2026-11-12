@@ -1,5 +1,9 @@
 ---
-title: Untitled (Red figures on grey)
+title: Equanimity
+with:
+- name: '@raven_vafadar'
+  url: https://www.instagram.com/raven_vafadar/
+instagram_post: https://www.instagram.com/p/DSmk7tNDMWk/
 featured: false
 date: 2025-08-25
 year: 2025
@@ -27,5 +31,7 @@ stages:
   label: White lines
   note: White outlines are drawn over the grey and brown at both sides and along the bottom, around the red figures.
 ---
+
+A collaboration with [@raven_vafadar](https://www.instagram.com/raven_vafadar/). It has been a blast.
 
 A large unstretched sheet that began on the studio floor as bands of grey and black. The next day red, blue and orange-brown forms were painted over the bands; by the end of June it hung on the wall as a broad horizontal painting, and in August white lines were drawn over the grey and brown around the figures. (The early photos are turned to match the final orientation.)
