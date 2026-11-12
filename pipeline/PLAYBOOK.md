@@ -165,6 +165,10 @@ works:
     text: |
       How the work developed, in two or three sentences.
     hero: "030432"                      # optional; default: the latest stage
+    with:                               # optional; collaborators, shown under the title
+      - name: "@someone"
+        url: https://www.instagram.com/someone/
+    instagram_post: https://www.instagram.com/p/…/   # optional; without tracking parameters
     finished: 2025-11-09                # optional; the date the work is listed under. Default:
                                         # the latest photo. Set it when the latest photo was taken
                                         # long after the painting was done (e.g. framed later).

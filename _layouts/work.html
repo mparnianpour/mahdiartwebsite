@@ -10,6 +10,7 @@ body_class: page-work
     <h1 class="work__title">{{ page.title }}</h1>
     <p class="work__line">
       {{ page.year }}{% if page.medium %} · {{ page.medium }}{% endif %}{% if page.size %} · {{ page.size }}{% endif %}
+      {% if page.with %} · with {% for c in page.with %}{% if c.url %}<a href="{{ c.url }}" rel="noopener">{{ c.name }}</a>{% else %}{{ c.name }}{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}{% endif %}
       {% if page.status == "In progress" %}<span class="badge">In progress</span>{% endif %}
     </p>
   </header>
@@ -26,6 +27,8 @@ body_class: page-work
       {% if page.year %}<div><dt>Year</dt><dd>{{ page.year }}</dd></div>{% endif %}
       {% if page.medium %}<div><dt>Medium</dt><dd>{{ page.medium }}</dd></div>{% endif %}
       {% if page.size %}<div><dt>Size</dt><dd>{{ page.size }}</dd></div>{% endif %}
+      {% if page.with %}<div><dt>Collaboration</dt><dd>{% for c in page.with %}{% if c.url %}<a href="{{ c.url }}" rel="noopener">{{ c.name }}</a>{% else %}{{ c.name }}{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}</dd></div>{% endif %}
+      {% if page.instagram_post %}<div><dt>Instagram</dt><dd><a href="{{ page.instagram_post }}" rel="noopener">View the post</a></dd></div>{% endif %}
       {% if ws_start %}{% assign ws_from = ws_start | date: "%-d %b %Y" %}{% assign ws_to = ws_end | date: "%-d %b %Y" %}<div><dt>Worked on</dt><dd>{% if page.status == "In progress" %}{{ ws_from }} – ongoing{% elsif ws_from == ws_to %}{{ ws_from }}{% else %}{{ ws_from }} – {{ ws_to }}{% endif %}</dd></div>{% endif %}
       {% if ws_frames > 1 %}<div><dt>Stages recorded</dt><dd>{{ ws_frames }}</dd></div>{% endif %}
       {% if ws_sketches > 0 %}<div><dt>Sketches</dt><dd>{{ ws_sketches }}</dd></div>{% endif %}
