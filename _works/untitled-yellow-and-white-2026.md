@@ -1,6 +1,7 @@
 ---
 title: Untitled (Yellow and white)
 size: 100 × 70 cm
+featured: false
 date: 2026-11-15
 year: 2026
 image: /assets/img/works/untitled-yellow-and-white-2026/0d8df6e5202a.jpg
@@ -22,7 +23,6 @@ stages:
   date: 2026-11-15
   label: Washes and bolder whites
   note: Compared with the first photograph, the left edge, lower left and bottom are now washed in yellow and ochre, darker at the bottom-right corner. The cluster is denser, with many more thick white strokes over it and a few bright lemon-yellow touches near the top right.
-featured: false
 ---
 
 Opaque yellow and white paint on a stretched canvas, worked on over one day, 15 November 2026. It began as a dense cluster of yellow and ochre strokes with thick white paint laid over it, on an otherwise bare white canvas. By evening the bare edges had been washed in yellow and ochre, and the white strokes across the cluster had become bolder. Two of the photographs show a digital image projected onto the canvas, first in yellow and later in pink.
