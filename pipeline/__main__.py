@@ -63,7 +63,7 @@ def cmd_similar(a):
         print(pid, photos[pid].get("taken"))
         for other, s in sorter.similar(pid, a.k):
             r = photos[other]
-            print(f"  {s:.3f}  {other}  {r.get('taken', '')[:10]}  {r['status']:8} {r.get('work') or ''}")
+            print(f"  {s:.3f}  {other}  {(r.get('taken') or '')[:10]}  {r['status']:8} {r.get('work') or ''}")
 
 
 def cmd_propose(a):
