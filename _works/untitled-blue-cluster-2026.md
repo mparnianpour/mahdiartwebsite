@@ -1,8 +1,9 @@
 ---
 title: Untitled (Blue cluster)
-date: 2026-08-15
+featured: false
+date: 2026-08-16
 year: 2026
-image: /assets/img/works/untitled-blue-cluster-2026/b83381830add.jpg
+image: /assets/img/works/untitled-blue-cluster-2026/0b957f581216.jpg
 archive: untitled-blue-cluster-2026
 stages:
 - image: /assets/img/works/untitled-blue-cluster-2026/95e8db4d951f.jpg
@@ -25,7 +26,14 @@ stages:
   date: 2026-08-15
   label: Olive and ochre
   note: Forty-five minutes later olive, ochre and brown shapes are painted over the white outlines on the grey panel, with a large yellow-olive patch below them, and a brown-ochre patch appears beside the column.
-featured: false
+- image: /assets/img/works/untitled-blue-cluster-2026/c9f3684b7fdf.jpg
+  date: 2026-08-15
+  label: Dark marks at lower left
+  note: Half an hour later a cluster of dark navy and black angular marks is added at the lower left of the grey panel, below the yellow-olive patch. Mahdi is seated in front of the sheet at the lower right of the photograph.
+- image: /assets/img/works/untitled-blue-cluster-2026/0b957f581216.jpg
+  date: 2026-08-16
+  label: Red band
+  note: The next afternoon red-brown and plum shapes are laid over the olive and ochre forms on the grey panel, mauve, tan and rust shapes are worked in among the blues, and a band of red, orange and rust brushwork with white runs along the bottom right of the sheet. Mahdi's face is at the foot of the photograph.
 ---
 
-An unstretched sheet photographed from 13 to 15 August 2026. It begins with blue strokes at the centre of a white sheet. Black, lilac and grey are added to the cluster the same evening, and over the next two days a grey panel with white outlines is painted at the left, followed by a column of small marks and olive and ochre shapes. There are later photographs of this work that are not shown here.
+An unstretched sheet photographed from 13 to 16 August 2026. It begins with blue strokes at the centre of a white sheet. Black, lilac and grey are added to the cluster the same evening, and over the next days a grey panel with white outlines is painted at the left, followed by a column of small marks, olive and ochre shapes, dark marks at the lower left, and finally red-brown and plum shapes and a band of red and orange brushwork along the bottom.
